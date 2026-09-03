@@ -11,8 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-// AuthProvider will be available after lib/AuthContext is present
-// import { AuthProvider } from "../lib/AuthContext";
+import { AuthProvider } from "../lib/AuthContext";
 
 function NotFoundComponent() {
   return (
@@ -126,10 +125,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* AuthProvider wrapper - uncomment after AuthContext is available */}
-      {/* <AuthProvider> */}
+      <AuthProvider>
         <Outlet />
-      {/* </AuthProvider> */}
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
