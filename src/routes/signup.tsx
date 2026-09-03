@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { AuthPage } from '../components/AuthPage'
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
@@ -6,13 +7,13 @@ export const Route = createFileRoute('/signup')({
 
 function SignupPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-md p-8">
-        <h1 className="text-2xl font-bold mb-6 text-center">Create Account</h1>
-        <p className="text-center text-muted-foreground">
-          Signup form will be integrated with AuthPage component.
-        </p>
-      </div>
-    </div>
+    <AuthPage
+      initialView="signup"
+      onSuccess={() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/dashboard'
+        }
+      }}
+    />
   )
 }

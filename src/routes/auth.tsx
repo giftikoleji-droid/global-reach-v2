@@ -1,16 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, redirect } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/auth')({
-  component: AuthPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/login' })
+  },
 })
-
-function AuthPage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold mb-4">Authentication</h1>
-        <p className="text-muted-foreground">Redirecting to login...</p>
-      </div>
-    </div>
-  )
-}
