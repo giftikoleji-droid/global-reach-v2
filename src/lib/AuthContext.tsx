@@ -79,7 +79,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return { success: true };
     } catch (err: unknown) {
-      return { success: false, error: err instanceof Error ? err.message : "An unexpected error occurred" };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "An unexpected error occurred",
+      };
     }
   }
 
@@ -105,7 +108,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return { success: true };
     } catch (err: unknown) {
-      return { success: false, error: err instanceof Error ? err.message : "An unexpected error occurred" };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "An unexpected error occurred",
+      };
     }
   }
 
