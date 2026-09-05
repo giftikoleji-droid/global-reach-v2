@@ -1,4 +1,4 @@
-name: Regenerate TanStack Route Tree
+name: Validate and repair production toolchain
 
 on:
   push:
@@ -9,7 +9,8 @@ permissions:
   contents: write
 
 jobs:
-  regenerate-route-tree:
+  validate-and-repair:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -25,20 +26,29 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
-      - name: Regenerate route tree
-        run: npx --yes tanstack-router-generator
+      - name: Auto-format and auto-fix lint issues
+        run: npm run lint -- --fix
 
-      - name: Commit generated route tree
+      - name: Verify lint
+        run: npm run lint
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+
+      - name: Build and regenerate route tree
+        run: npm run build
+
+      - name: Commit repaired source, lockfile, and generated route tree
         run: |
-          if git diff --quiet -- src/routeTree.gen.ts; then
-            echo "Route tree is already up to date."
+          if git diff --quiet; then
+            echo "Working tree is already clean."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/routeTree.gen.ts
-          git commit -m "chore: regenerate TanStack route tree"
+          git add -A
+          git commit -m "fix: complete production toolchain audit"
           git push origin main
