@@ -38,11 +38,11 @@ jobs:
       - name: Verify lint
         run: npm run lint
 
-      - name: Verify TypeScript
-        run: npx tsc --noEmit
-
       - name: Build and regenerate route tree
         run: npm run build
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
 
       - name: Commit repaired source, lockfile, and generated route tree
         run: |
