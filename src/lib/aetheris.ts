@@ -44,12 +44,11 @@ export type Plan = {
   actionText: string;
 };
 
-// The 4 REAL company investment plans (Strictly Starter, Growth, Pro, Elite)
 export const PLANS: Plan[] = [
   {
     id: "starter",
     name: "Essential Plan",
-minAmount: 100,
+    minAmount: 100,
     maxAmount: 499,
     amount: 100,
     returnPct: 8,
@@ -128,11 +127,20 @@ minAmount: 100,
   },
 ];
 
-// Deposit settlement addresses with verified signatures
-export const WALLET_PROOFS: Record<
-  string,
-  { address: string; signature: string; signedMessage: string; verificationLink?: string }
-> = {
+/** Guaranteed non-undefined plan (PLANS is always non-empty). */
+export const DEFAULT_PLAN: Plan = PLANS[0] as Plan;
+
+export function resolvePlan(idOrName?: string | null): Plan {
+  if (idOrName) {
+    const found = PLANS.find(
+      (p) => p.id === idOrName || p.name.toLowerCase() === idOrName.toLowerCase(),
+    );
+    if (found) return found;
+  }
+  return DEFAULT_PLAN;
+}
+
+export const WALLET_PROOFS = {
   BTC: {
     address: "bc1q3z6xhcwagwth320x6hh7g3e042gzud6uh0jcss",
     signature:
@@ -152,11 +160,15 @@ export const WALLET_PROOFS: Record<
       "0xba9d356ed1e3b6989c904e4c52710d7543b78bb070908c793d097bb2d9060dd90154b3f3219026b96d0904e317618359c0ba39abb9b574e5ee0dedf3b335becc1b",
     signedMessage: "Aetheris Capital Ltd – Official USDT TRC-20 deposit wallet – 2026",
   },
-};
+} as const;
 
-export const WALLETS: Record<string, string> = Object.fromEntries(
-  Object.entries(WALLET_PROOFS).map(([k, v]) => [k, v.address])
-) as Record<string, string>;
+export type WalletNetwork = keyof typeof WALLET_PROOFS;
+
+export const WALLETS: { readonly [K in WalletNetwork]: string } = {
+  BTC: WALLET_PROOFS.BTC.address,
+  ETH: WALLET_PROOFS.ETH.address,
+  "USDT-TRC20": WALLET_PROOFS["USDT-TRC20"].address,
+};
 
 export function formatCurrency(n: number | string, decimals: number = 0): string {
   const val = Number(n || 0);
@@ -193,16 +205,14 @@ export function formatDate(value: string | number | Date): string {
 export function formatDateTime(value: string | number | Date): string {
   try {
     const d = new Date(value);
-    return (
-      new Intl.DateTimeFormat(LOCALE, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZoneName: "short",
-      }).format(d)
-    );
+    return new Intl.DateTimeFormat(LOCALE, {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short",
+    }).format(d);
   } catch {
     return String(value);
   }
@@ -234,10 +244,6 @@ export function generateRefCode(email: string): string {
   return prefix + rand;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DATA TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
 export type UserRole = "client" | "admin";
 
 export type Profile = {
@@ -263,7 +269,7 @@ export type Investment = {
   plan_name: "Starter" | "Growth" | "Pro" | "Elite" | string;
   plan_id: string;
   amount_invested: number;
-  amount: number; // Backward-compat alias
+  amount: number;
   current_value: number;
   return_pct: number;
   expected_return: number;
@@ -323,10 +329,6 @@ export type SupportTicket = {
   created_at: string;
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LOCAL STORAGE ADAPTER (Offline & Preview Fallback Layer)
-// ─────────────────────────────────────────────────────────────────────────────
-
 import { supabase } from "./supabase";
 
 const STORAGE_KEYS = {
@@ -345,11 +347,13 @@ export const localStore = {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.USER);
       if (!raw) return null;
-      const parsed = JSON.parse(raw);
+      const parsed = JSON.parse(raw) as Profile;
       const adminList = COMPANY.adminEmails as readonly string[];
       return {
         ...parsed,
-        role: parsed.role || (parsed.email && adminList.includes(parsed.email.toLowerCase()) ? "admin" : "client"),
+        role:
+          parsed.role ||
+          (parsed.email && adminList.includes(parsed.email.toLowerCase()) ? "admin" : "client"),
       };
     } catch {
       return null;
@@ -364,7 +368,9 @@ export const localStore = {
         const adminList = COMPANY.adminEmails as readonly string[];
         const enriched: Profile = {
           ...user,
-          role: user.role || (user.email && adminList.includes(user.email.toLowerCase()) ? "admin" : "client"),
+          role:
+            user.role ||
+            (user.email && adminList.includes(user.email.toLowerCase()) ? "admin" : "client"),
         };
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(enriched));
       }
@@ -376,7 +382,7 @@ export const localStore = {
   getBalance(userId: string): number {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.BALANCES);
-      const map = raw ? JSON.parse(raw) : {};
+      const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
       return Number(map[userId] ?? 0.0);
     } catch {
       return 0.0;
@@ -386,7 +392,7 @@ export const localStore = {
   setBalance(userId: string, amount: number): void {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.BALANCES);
-      const map = raw ? JSON.parse(raw) : {};
+      const map = raw ? (JSON.parse(raw) as Record<string, number>) : {};
       map[userId] = Math.max(0, Number(amount));
       localStorage.setItem(STORAGE_KEYS.BALANCES, JSON.stringify(map));
     } catch {
@@ -398,9 +404,7 @@ export const localStore = {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.INVESTMENTS);
       const list: Investment[] = raw ? JSON.parse(raw) : [];
-      if (userId) {
-        return list.filter((i) => i.user_id === userId);
-      }
+      if (userId) return list.filter((i) => i.user_id === userId);
       return list;
     } catch {
       return [];
@@ -423,9 +427,12 @@ export const localStore = {
       amount: Number(inv.amount_invested ?? inv.amount ?? 0),
       amount_invested: Number(inv.amount_invested ?? inv.amount ?? 0),
       current_value: Number(inv.current_value ?? inv.amount_invested ?? inv.amount ?? 0),
-      status: (inv.status as "pending" | "active" | "matured" | "completed") || "active",
+      status: (inv.status as Investment["status"]) || "active",
       start_date: inv.start_date || new Date().toISOString(),
-      end_date: inv.end_date || inv.maturity_date || new Date(Date.now() + (inv.term_days || 30) * 86400000).toISOString(),
+      end_date:
+        inv.end_date ||
+        inv.maturity_date ||
+        new Date(Date.now() + (inv.term_days || 30) * 86400000).toISOString(),
     };
     list.unshift(item);
     this.saveInvestments(list);
@@ -436,18 +443,18 @@ export const localStore = {
     const list = this.getInvestments();
     const idx = list.findIndex((i) => i.id === id);
     if (idx === -1) return null;
-    list[idx] = { ...list[idx], ...updates };
+    const current = list[idx];
+    if (!current) return null;
+    list[idx] = { ...current, ...updates };
     this.saveInvestments(list);
-    return list[idx];
+    return list[idx] ?? null;
   },
 
   getTransactions(userId?: string): Transaction[] {
     try {
       const raw = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
       const list: Transaction[] = raw ? JSON.parse(raw) : [];
-      if (userId) {
-        return list.filter((t) => t.user_id === userId);
-      }
+      if (userId) return list.filter((t) => t.user_id === userId);
       return list;
     } catch {
       return [];
@@ -462,7 +469,9 @@ export const localStore = {
     }
   },
 
-  addTransaction(tx: Omit<Transaction, "id" | "date"> & { id?: string; date?: string }): Transaction {
+  addTransaction(
+    tx: Omit<Transaction, "id" | "date"> & { id?: string; date?: string },
+  ): Transaction {
     const list = this.getTransactions();
     const item: Transaction = {
       id: tx.id || "tx_" + Math.random().toString(36).substring(2, 10),
@@ -536,12 +545,7 @@ export const localStore = {
   },
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// UNIFIED DATABASE & ADMIN PAYOUT ENGINE
-// ─────────────────────────────────────────────────────────────────────────────
-
 export const db = {
-  // Check if a user/profile has admin rights
   isAdmin(userOrProfile: { email?: string; role?: string } | null): boolean {
     if (!userOrProfile) return false;
     if (userOrProfile.role === "admin") return true;
@@ -564,12 +568,12 @@ export const db = {
         const adminList = COMPANY.adminEmails as readonly string[];
         const isAdminUser =
           data.role === "admin" ||
-          (data.email && adminList.includes(data.email.toLowerCase()));
+          (data.email && adminList.includes(String(data.email).toLowerCase()));
         return {
           id: data.id,
           name: data.name || data.full_name || "Institutional Client",
           email: data.email,
-          role: isAdminUser ? "admin" : (data.role || "client"),
+          role: isAdminUser ? "admin" : data.role || "client",
           ref_code: data.ref_code,
           bonus_earned: Number(data.bonus_earned || 0),
         };
@@ -592,50 +596,11 @@ export const db = {
         bonus_earned: profile.bonus_earned,
       });
     } catch {
-      // continue
+      // continue with local
     }
     return profile;
   },
 
-  // ─── User Available Balance ───
-  async getBalance(userId: string): Promise<number> {
-    try {
-      const { data, error } = await supabase
-        .from("balances")
-        .select("available_balance")
-        .eq("user_id", userId)
-        .maybeSingle();
-
-      if (!error && data) {
-        const bal = Number(data.available_balance || 0);
-        localStore.setBalance(userId, bal);
-        return bal;
-      }
-    } catch {
-      // continue
-    }
-    return localStore.getBalance(userId);
-  },
-
-  async updateBalance(userId: string, newBalance: number): Promise<number> {
-    const val = Math.max(0, Number(newBalance || 0));
-    localStore.setBalance(userId, val);
-
-    try {
-      await supabase
-        .from("balances")
-        .upsert({
-          user_id: userId,
-          available_balance: val,
-          updated_at: new Date().toISOString(),
-        });
-    } catch {
-      // continue
-    }
-    return val;
-  },
-
-  // ─── Investments ───
   async getInvestments(userId: string): Promise<Investment[]> {
     try {
       const { data, error } = await supabase
@@ -645,38 +610,36 @@ export const db = {
         .order("created_at", { ascending: false });
 
       if (!error && data && data.length > 0) {
-        const parsed: Investment[] = data.map((d) => {
-          const plan = PLANS.find((p) => p.id === d.plan_id || p.name.toLowerCase() === (d.plan_name || "").toLowerCase()) || PLANS[0];
+        return data.map((d) => {
+          const plan = resolvePlan(
+            (d.plan_id as string | undefined) || (d.plan_name as string | undefined),
+          );
           const amt = Number(d.amount_invested ?? d.amount ?? 0);
           const retPct = Number(d.return_pct ?? plan.returnPct);
           const currVal = Number(d.current_value ?? amt * (1 + retPct / 100));
-
           return {
-            id: d.id,
-            user_id: d.user_id,
-            user_email: d.user_email,
-            plan_id: d.plan_id || plan.id,
-            plan_name: d.plan_name || plan.name,
+            id: String(d.id),
+            user_id: String(d.user_id),
+            plan_id: String(d.plan_id || plan.id),
+            plan_name: String(d.plan_name || plan.name),
             amount_invested: amt,
             amount: amt,
             current_value: currVal,
             return_pct: retPct,
             expected_return: amt * (1 + retPct / 100),
-            term_days: d.term_days || plan.termDays,
-            payout_network: d.wallet_address?.startsWith("0x") ? "ETH" : (d.wallet_address?.startsWith("bc1") ? "BTC" : "USDT-TRC20"),
-            payout_address: d.wallet_address || "",
-            wallet_address: d.wallet_address || "",
-            tx_id: d.tx_hash || "",
-            tx_hash: d.tx_hash || "",
-            status: d.status || "active",
-            start_date: d.start_date || d.created_at || new Date().toISOString(),
-            end_date: d.end_date || d.maturity_date || new Date(Date.now() + (d.term_days || plan.termDays) * 86400000).toISOString(),
-            maturity_date: d.end_date || d.maturity_date,
-            created_at: d.created_at,
-          };
+            term_days: Number(d.term_days || plan.termDays),
+            wallet_address: String(d.wallet_address || ""),
+            tx_hash: String(d.tx_hash || ""),
+            status: (d.status as Investment["status"]) || "active",
+            start_date: String(d.start_date || d.created_at || new Date().toISOString()),
+            end_date: String(
+              d.end_date ||
+                d.maturity_date ||
+                new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
+            ),
+            created_at: d.created_at ? String(d.created_at) : undefined,
+          } satisfies Investment;
         });
-        localStore.saveInvestments(parsed);
-        return parsed;
       }
     } catch {
       // fallback
@@ -688,38 +651,41 @@ export const db = {
     try {
       const { data, error } = await supabase
         .from("investments")
-        .select("*, profiles(email, name)")
+        .select("*, profiles(email)")
         .order("created_at", { ascending: false });
 
       if (!error && data && data.length > 0) {
-        return data.map((d: any) => {
-          const plan = PLANS.find((p) => p.id === d.plan_id || p.name.toLowerCase() === (d.plan_name || "").toLowerCase()) || PLANS[0];
+        return data.map((d) => {
+          const plan = resolvePlan(
+            (d.plan_id as string | undefined) || (d.plan_name as string | undefined),
+          );
           const amt = Number(d.amount_invested ?? d.amount ?? 0);
           const retPct = Number(d.return_pct ?? plan.returnPct);
           const currVal = Number(d.current_value ?? amt * (1 + retPct / 100));
-
+          const profiles = d.profiles as { email?: string } | null | undefined;
           return {
-            id: d.id,
-            user_id: d.user_id,
-            user_email: d.profiles?.email || d.user_email || "Client",
-            plan_id: d.plan_id || plan.id,
-            plan_name: d.plan_name || plan.name,
+            id: String(d.id),
+            user_id: String(d.user_id),
+            user_email: profiles?.email || String(d.user_email || "Client"),
+            plan_id: String(d.plan_id || plan.id),
+            plan_name: String(d.plan_name || plan.name),
             amount_invested: amt,
             amount: amt,
             current_value: currVal,
             return_pct: retPct,
             expected_return: amt * (1 + retPct / 100),
-            term_days: d.term_days || plan.termDays,
-            wallet_address: d.wallet_address || "",
-            payout_address: d.wallet_address || "",
-            tx_hash: d.tx_hash || "",
-            tx_id: d.tx_hash || "",
-            status: d.status || "active",
-            start_date: d.start_date || d.created_at || new Date().toISOString(),
-            end_date: d.end_date || d.maturity_date || new Date(Date.now() + (d.term_days || plan.termDays) * 86400000).toISOString(),
-            maturity_date: d.end_date || d.maturity_date,
-            created_at: d.created_at,
-          };
+            term_days: Number(d.term_days || plan.termDays),
+            wallet_address: String(d.wallet_address || ""),
+            tx_hash: String(d.tx_hash || ""),
+            status: (d.status as Investment["status"]) || "active",
+            start_date: String(d.start_date || d.created_at || new Date().toISOString()),
+            end_date: String(
+              d.end_date ||
+                d.maturity_date ||
+                new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
+            ),
+            created_at: d.created_at ? String(d.created_at) : undefined,
+          } satisfies Investment;
         });
       }
     } catch {
@@ -745,13 +711,16 @@ export const db = {
     tx_hash?: string;
     wallet_address?: string;
   }): Promise<Investment> {
-    const plan = PLANS.find((p) => p.id === inv.plan_id || p.name.toLowerCase() === (inv.plan_name || "").toLowerCase()) || PLANS[0];
+    const plan = resolvePlan(inv.plan_id || inv.plan_name);
     const planName = inv.plan_name || plan.name;
     const startDate = inv.start_date || new Date().toISOString();
-    const endDate = inv.end_date || inv.maturity_date || new Date(Date.now() + inv.term_days * 86400000).toISOString();
+    const endDate =
+      inv.end_date ||
+      inv.maturity_date ||
+      new Date(Date.now() + inv.term_days * 86400000).toISOString();
     const amt = Number(inv.amount_invested ?? inv.amount ?? 0);
     const retPct = Number(inv.return_pct || plan.returnPct);
-    const currVal = Number(inv.current_value ?? (amt * (1 + retPct / 100)));
+    const currVal = Number(inv.current_value ?? amt * (1 + retPct / 100));
 
     const local = localStore.addInvestment({
       user_id: inv.user_id,
@@ -761,198 +730,72 @@ export const db = {
       amount_invested: amt,
       current_value: currVal,
       return_pct: retPct,
-      expected_return: currVal,
+      expected_return: inv.expected_return ?? amt * (1 + retPct / 100),
       term_days: inv.term_days,
-      payout_network: inv.wallet_address?.startsWith("0x") ? "ETH" : "USDT-TRC20",
-      payout_address: inv.wallet_address || "",
-      wallet_address: inv.wallet_address || "",
-      tx_id: inv.tx_hash || "",
-      tx_hash: inv.tx_hash || "",
-      status: inv.status || "active",
       start_date: startDate,
       end_date: endDate,
-      maturity_date: endDate,
-    });
-
-    // Also record transaction for the investment
-    localStore.addTransaction({
-      user_id: inv.user_id,
-      amount: amt,
-      type: "investment",
-      description: `${planName} Mandate Capital Allocation`,
-      date: startDate,
+      status: inv.status || "active",
+      tx_hash: inv.tx_hash,
+      wallet_address: inv.wallet_address,
     });
 
     try {
-      const { data, error } = await supabase
-        .from("investments")
-        .insert({
-          user_id: inv.user_id,
-          plan_name: planName,
-          plan_id: plan.id,
-          amount_invested: amt,
-          amount: amt,
-          current_value: currVal,
-          return_pct: retPct,
-          term_days: inv.term_days,
-          start_date: startDate,
-          end_date: endDate,
-          maturity_date: endDate,
-          status: inv.status || "active",
-          tx_hash: inv.tx_hash || null,
-          wallet_address: inv.wallet_address || null,
-        })
-        .select()
-        .single();
-
-      // Insert transaction to ledger in Supabase
-      await supabase.from("transactions").insert({
+      await supabase.from("investments").insert({
+        id: local.id,
         user_id: inv.user_id,
-        amount: amt,
-        type: "investment",
-        description: `${planName} Mandate Capital Allocation`,
-        date: startDate,
+        plan_id: plan.id,
+        plan_name: planName,
+        amount_invested: amt,
+        current_value: currVal,
+        return_pct: retPct,
+        term_days: inv.term_days,
+        start_date: startDate,
+        end_date: endDate,
+        status: inv.status || "active",
+        tx_hash: inv.tx_hash || null,
+        wallet_address: inv.wallet_address || null,
       });
-
-      if (!error && data) {
-        return {
-          ...local,
-          id: data.id,
-        };
-      }
     } catch {
-      // continue
+      // local already saved
     }
     return local;
   },
 
-  // ─── CRITICAL ADMIN ACTION: CREDIT PAYOUT ───
-  // CRITICAL ARCHITECTURE RULE:
-  // Profit is NEVER calculated or credited automatically.
-  // The Admin MUST manually credit the user's balance when an investment matures.
-  async creditPayout(params: {
+  async creditPayout(args: {
     investmentId: string;
     userId: string;
     amountInvested: number;
     profit: number;
     planName: string;
-  }): Promise<{ success: boolean; payoutTotal: number; newBalance: number }> {
-    const { investmentId, userId, amountInvested, profit, planName } = params;
-    const payoutTotal = Math.max(0, Number(amountInvested) + Number(profit));
-
-    // 1. Get current balance and add payout total (principal + profit)
-    const currentBal = await this.getBalance(userId);
-    const newBalance = currentBal + payoutTotal;
-
-    // 2. Update user's available_balance in balances table
-    await this.updateBalance(userId, newBalance);
-
-    // 3. Mark investment as 'matured' and update current_value
-    localStore.updateInvestment(investmentId, {
-      status: "matured",
-      current_value: payoutTotal,
-    });
-
+  }): Promise<{ success: boolean; error?: string }> {
     try {
-      await supabase
-        .from("investments")
-        .update({
-          status: "matured",
-          current_value: payoutTotal,
-        })
-        .eq("id", investmentId);
-    } catch {
-      // continue
-    }
-
-    // 4. Log the Payout transaction in the transactions audit ledger
-    const txDesc = `Maturity Payout · ${planName} ($${Number(amountInvested).toLocaleString()} Capital + $${Number(profit).toLocaleString()} Yield)`;
-    localStore.addTransaction({
-      user_id: userId,
-      amount: payoutTotal,
-      type: "payout",
-      description: txDesc,
-      date: new Date().toISOString(),
-    });
-
-    try {
-      await supabase.from("transactions").insert({
-        user_id: userId,
-        amount: payoutTotal,
+      const total = args.amountInvested + args.profit;
+      localStore.updateInvestment(args.investmentId, { status: "matured" });
+      const bal = localStore.getBalance(args.userId);
+      localStore.setBalance(args.userId, bal + total);
+      localStore.addTransaction({
+        user_id: args.userId,
+        amount: total,
         type: "payout",
-        description: txDesc,
-        date: new Date().toISOString(),
+        description: `Payout credited for ${args.planName}`,
       });
-    } catch {
-      // continue
+      return { success: true };
+    } catch (err: unknown) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Payout failed",
+      };
     }
-
-    return {
-      success: true,
-      payoutTotal,
-      newBalance,
-    };
   },
 
-  // ─── Transactions Audit Ledger ───
-  async getTransactions(userId: string): Promise<Transaction[]> {
-    try {
-      const { data, error } = await supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_id", userId)
-        .order("date", { ascending: false });
-
-      if (!error && data && data.length > 0) {
-        const parsed: Transaction[] = data.map((d) => ({
-          id: d.id,
-          user_id: d.user_id,
-          amount: Number(d.amount || 0),
-          type: d.type as "investment" | "payout" | "withdrawal",
-          description: d.description || "System transaction",
-          date: d.date || d.created_at || new Date().toISOString(),
-          created_at: d.created_at,
-        }));
-        localStore.saveTransactions(parsed);
-        return parsed;
-      }
-    } catch {
-      // fallback
-    }
-    return localStore.getTransactions(userId);
-  },
-
-  async addTransaction(tx: {
-    user_id: string;
-    amount: number;
-    type: "investment" | "payout" | "withdrawal";
-    description: string;
-    date?: string;
-  }): Promise<Transaction> {
-    const local = localStore.addTransaction(tx);
-    try {
-      await supabase.from("transactions").insert({
-        user_id: tx.user_id,
-        amount: tx.amount,
-        type: tx.type,
-        description: tx.description,
-        date: tx.date || new Date().toISOString(),
-      });
-    } catch {
-      // continue
-    }
-    return local;
-  },
-
-  // ─── Leads & Tickets ───
   async addLead(lead: {
     full_name: string;
     email: string;
-    phone?: string;
-    bot_source?: string;
-    status?: string;
-    notes?: string;
-    converted_user_id?: string;
+    phone?: string | undefined;
+    bot_source?: string | undefined;
+    status?: string | undefined;
+    notes?: string | undefined;
+    converted_user_id?: string | undefined;
   }): Promise<Lead> {
     const local = localStore.addLead({
       full_name: lead.full_name,
@@ -973,41 +816,6 @@ export const db = {
         status: lead.status || "new",
         notes: lead.notes || null,
         converted_user_id: lead.converted_user_id || null,
-      });
-    } catch {
-      // continue
-    }
-    return local;
-  },
-
-  async addSupportTicket(ticket: {
-    client_email: string;
-    ticket_id?: string;
-    query_summary: string;
-    transcript: string;
-    status?: string;
-  }): Promise<SupportTicket> {
-    const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    let code = "";
-    for (let i = 0; i < 4; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    const finalTicketId = ticket.ticket_id || `#TICK-${code}`;
-
-    const local = localStore.addTicket({
-      ticket_id: finalTicketId,
-      user_email: ticket.client_email,
-      transcript: [{ role: "user", content: ticket.query_summary }],
-      status: ticket.status || "open",
-    });
-
-    try {
-      await supabase.from("support_tickets").insert({
-        client_email: ticket.client_email,
-        ticket_id: finalTicketId,
-        query_summary: ticket.query_summary,
-        transcript: ticket.transcript,
-        status: ticket.status || "open",
       });
     } catch {
       // continue
