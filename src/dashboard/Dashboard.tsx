@@ -16,7 +16,8 @@ export interface DashboardProps {
   investments?: Investment[];
   onLogout: () => void;
   onBrowsePlans: () => void;
-  onChoosePlan?: (planId: string) => void;
+  // exactOptionalPropertyTypes: allow explicit undefined assignment
+  onChoosePlan?: ((planId: string) => void) | undefined;
 }
 
 function routeFromPath(): "dashboard" | "investments" | "wallets" | "referrals" | "profile" {
@@ -30,11 +31,14 @@ function routeFromPath(): "dashboard" | "investments" | "wallets" | "referrals" 
 
 export function Dashboard({ profile, onLogout, onBrowsePlans, onChoosePlan }: DashboardProps) {
   const { user } = useAuth();
+  // Prefer authenticated user id; fall back to profile id when present
+  const userId: string | undefined = user?.id ?? profile?.id ?? undefined;
+
   return (
     <DashboardProvider initialRoute={routeFromPath()}>
       <DashboardShell
         profile={profile}
-        userId={user?.id || profile?.id}
+        userId={userId}
         onLogout={onLogout}
         onBrowsePlans={onBrowsePlans}
         onChoosePlan={onChoosePlan}
@@ -51,10 +55,10 @@ function DashboardShell({
   onChoosePlan,
 }: {
   profile: Profile | null;
-  userId?: string;
+  userId: string | undefined;
   onLogout: () => void;
   onBrowsePlans: () => void;
-  onChoosePlan?: (planId: string) => void;
+  onChoosePlan?: ((planId: string) => void) | undefined;
 }) {
   const { route } = useDashboard();
   const portfolio = useClientPortfolio(userId);
@@ -65,12 +69,20 @@ function DashboardShell({
       <main className="dashboard-main">
         <div className="dashboard-container">
           {portfolio.loading ? (
-            <div className="dashboard-state" role="status">Loading your portfolio…</div>
+            <div className="dashboard-state" role="status">
+              Loading your portfolio…
+            </div>
           ) : portfolio.error ? (
             <div className="dashboard-error">
-              <strong>We couldn't load your portfolio.</strong>
+              <strong>We couldn&apos;t load your portfolio.</strong>
               <p>Please try again. Your authentication and account remain unchanged.</p>
-              <button type="button" className="dashboard-button secondary" onClick={() => void portfolio.refresh()}>Try again</button>
+              <button
+                type="button"
+                className="dashboard-button secondary"
+                onClick={() => void portfolio.refresh()}
+              >
+                Try again
+              </button>
             </div>
           ) : route === "dashboard" ? (
             <DashboardHome
