@@ -1,5 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { COMPANY, formatCurrency, PLANS, WALLETS, WALLET_PROOFS, type Plan, type Profile } from "../lib/aetheris";
+import {
+  COMPANY,
+  formatCurrency,
+  PLANS,
+  WALLETS,
+  WALLET_PROOFS,
+  type Plan,
+  type Profile,
+  type WalletNetwork,
+} from "../lib/aetheris";
 import { supabase } from "../lib/supabase";
 
 type Msg = { text: string; type: "error" | "success" | "info" } | null;
@@ -38,9 +47,9 @@ export function PlanModal({
 
   if (!planId || !plan) return null;
 
-  const walletKey = network as keyof typeof WALLETS;
-  const depositAddress =
-    network && walletKey in WALLETS ? WALLETS[walletKey] : "Select network above";
+  const resolvedWallet =
+    network && network in WALLETS ? WALLETS[network as WalletNetwork] : undefined;
+  const depositAddress: string = resolvedWallet ?? "Select network above";
 
   function continueToDeposit(e: FormEvent) {
     e.preventDefault();
@@ -93,7 +102,10 @@ export function PlanModal({
       console.error("[PlanModal] transaction verification failed", error);
       setBusy(false);
       setMsg({
-        text: error instanceof Error ? error.message : "Transaction verification failed. No investment was activated.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Transaction verification failed. No investment was activated.",
         type: "error",
       });
     }
@@ -128,7 +140,8 @@ export function PlanModal({
         {msg && <div className={"message show " + msg.type}>{msg.text}</div>}
 
         <div className="selected-plan-summary">
-          <strong>{plan.name} Mandate</strong> · {formatCurrency(plan.amount)} allocation · +{plan.returnPct}% target yield · {plan.termDays} days
+          <strong>{plan.name} Mandate</strong> · {formatCurrency(plan.amount)} allocation · +
+          {plan.returnPct}% target yield · {plan.termDays} days
         </div>
 
         {!showDeposit ? (
@@ -180,7 +193,9 @@ export function PlanModal({
               Step 1: Transmit {formatCurrency(plan.amount)} to Company Escrow Wallet
             </div>
 
-            <div className="wallet-address" style={{ margin: "6px 0" }}>{depositAddress}</div>
+            <div className="wallet-address" style={{ margin: "6px 0" }}>
+              {depositAddress}
+            </div>
 
             <button
               type="button"
@@ -196,7 +211,7 @@ export function PlanModal({
             </button>
 
             {(() => {
-              const proofKey = network as keyof typeof WALLET_PROOFS;
+              const proofKey = network as WalletNetwork;
               const depositProof =
                 network && proofKey in WALLET_PROOFS ? WALLET_PROOFS[proofKey] : undefined;
               if (!depositProof) return null;
@@ -214,16 +229,29 @@ export function PlanModal({
                     Cryptographic Proof of Ownership
                   </div>
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--cyan)" }}>Signed Message</div>
-                    <div className="wallet-address" style={{ marginTop: 4, fontSize: ".75rem" }}>{depositProof.signedMessage}</div>
+                    <div style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--cyan)" }}>
+                      Signed Message
+                    </div>
+                    <div className="wallet-address" style={{ marginTop: 4, fontSize: ".75rem" }}>
+                      {depositProof.signedMessage}
+                    </div>
                   </div>
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--cyan)" }}>Signature</div>
-                    <div className="wallet-address" style={{ marginTop: 4, fontSize: ".72rem" }}>{depositProof.signature}</div>
+                    <div style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--cyan)" }}>
+                      Signature
+                    </div>
+                    <div className="wallet-address" style={{ marginTop: 4, fontSize: ".72rem" }}>
+                      {depositProof.signature}
+                    </div>
                   </div>
-                  {depositProof.verificationLink && (
+                  {"verificationLink" in depositProof && depositProof.verificationLink && (
                     <div style={{ marginTop: 8 }}>
-                      <a href={depositProof.verificationLink} target="_blank" rel="noreferrer" style={{ color: "var(--cyan)", fontSize: ".8rem", textDecoration: "underline" }}>
+                      <a
+                        href={depositProof.verificationLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: "var(--cyan)", fontSize: ".8rem", textDecoration: "underline" }}
+                      >
                         Verify Signature on Etherscan ↗
                       </a>
                     </div>
@@ -250,15 +278,18 @@ export function PlanModal({
             <button
               type="button"
               className="primary-btn submit"
-              onClick={confirmDeposit}
+              onClick={() => void confirmDeposit()}
               disabled={busy || !txHash.trim()}
             >
               {busy ? "Verifying On-Chain…" : "Verify Deposit & Begin Tracking"}
             </button>
 
             <p style={{ color: "var(--muted)", fontSize: ".72rem", marginTop: 14, lineHeight: 1.5 }}>
-              Settlement desk operates under global standard market hours. Payout executes automatically at term maturity. Support:{" "}
-              <a href={`mailto:${COMPANY.email}`} style={{ color: "var(--cyan)" }}>{COMPANY.email}</a>
+              Settlement desk operates under global standard market hours. Payout executes automatically
+              at term maturity. Support:{" "}
+              <a href={`mailto:${COMPANY.email}`} style={{ color: "var(--cyan)" }}>
+                {COMPANY.email}
+              </a>
             </p>
           </div>
         )}
