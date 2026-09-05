@@ -14,6 +14,17 @@ interface SupportTicketPayload {
   transcript: string;
 }
 
+interface SupabaseError {
+  code?: string;
+  message: string;
+  details?: string;
+  hint?: string;
+}
+
+interface ResendResult {
+  id?: string;
+}
+
 function generateTicketId(): string {
   return `SUP-${crypto.randomUUID().replace(/-/g, "").slice(0, 10).toUpperCase()}`;
 }
@@ -52,7 +63,7 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     const timestamp = new Date().toISOString();
     let ticketId = generateTicketId();
-    let dbError: any = null;
+    let dbError: SupabaseError | null = null;
 
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const result = await supabase.from("support_tickets").insert({
@@ -89,9 +100,6 @@ serve(async (req: Request) => {
       return json({ success: true, ticket_id: ticketId, status: "open", email_dispatched: false, warning: "Ticket created, but email delivery is not configured." });
     }
 
-    // Resend requires the From address to belong to a verified sending domain.
-    // Do not use Resend's demo sender in production because it can only deliver
-    // to the address associated with the Resend account.
     if (!configuredFrom) {
       console.error("[support-escalation] SUPPORT_FROM_EMAIL is missing; configure a verified Resend sender", { ticketId, companyInbox });
       return json({ success: true, ticket_id: ticketId, status: "open", email_dispatched: false, warning: "Ticket created, but the support sender email is not configured." });
@@ -140,13 +148,15 @@ serve(async (req: Request) => {
       return json({ success: true, ticket_id: ticketId, status: "open", email_dispatched: false, warning: `Ticket created, but email delivery failed (${resendResponse.status}).` });
     }
 
-    let resendResult: any = null;
-    try { resendResult = JSON.parse(resendBody); } catch { /* keep successful response even if non-JSON */ }
+    let resendResult: ResendResult | null = null;
+    try { resendResult = JSON.parse(resendBody) as ResendResult; } catch { /* keep successful response even if non-JSON */ }
     console.log("[support-escalation] email accepted by Resend", { ticketId, emailId: resendResult?.id || null, companyInbox });
 
     return json({ success: true, ticket_id: ticketId, status: "open", email_dispatched: true, email_id: resendResult?.id || null, company_inbox: companyInbox });
-  } catch (error: any) {
-    console.error("[support-escalation] unexpected error", { message: error?.message, stack: error?.stack });
-    return json({ error: error?.message || "Internal server error" }, 500);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const stack = error instanceof Error ? error.stack : undefined;
+    console.error("[support-escalation] unexpected error", { message, stack });
+    return json({ error: message }, 500);
   }
 });
