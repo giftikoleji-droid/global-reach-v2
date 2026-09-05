@@ -50,35 +50,29 @@ export function AuthPage({
     setMsg(null);
   }, [view]);
 
-  // 1. Google OAuth
   async function handleGoogleSignIn() {
     setIsLoading(true);
     setMsg(null);
     try {
-      const redirectUrl =
-        typeof window !== "undefined"
-          ? window.location.origin
-          : "/";
+      const redirectUrl = typeof window !== "undefined" ? window.location.origin : "/";
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: redirectUrl,
-          queryParams: {
-            prompt: "select_account",
-          },
+          queryParams: { prompt: "select_account" },
         },
       });
       if (error) {
         setMsg({ text: error.message || "Failed to sign in with Google.", type: "error" });
       }
-    } catch (err: any) {
-      setMsg({ text: err?.message || "An unexpected error occurred.", type: "error" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setMsg({ text: message, type: "error" });
     } finally {
       setIsLoading(false);
     }
   }
 
-  // 2. Email + Password Login
   async function handleEmailPasswordLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -95,28 +89,31 @@ export function AuthPage({
       });
 
       if (error) {
-        // Check local fallback
-        const existing = localStore.getUser();
-        if (existing && existing.email.toLowerCase() === trimmedEmail.toLowerCase()) {
-          onSuccess?.();
-          return;
-        }
+        // Auth must only come from Supabase — no localStorage fallback
         setMsg({ text: error.message || "Invalid login credentials.", type: "error" });
         return;
       }
 
-      if (authData?.user) {
-        const fetched = await db.getProfile(authData.user.id);
+      const user = authData.user;
+      if (user) {
+        const meta = user.user_metadata as Record<string, unknown> | undefined;
+        const fetched = await db.getProfile(user.id);
         const profile: Profile = fetched || {
-          id: authData.user.id,
-          name: authData.user.user_metadata?.name || authData.user.user_metadata?.full_name || trimmedEmail.split("@")[0] || "Client",
+          id: user.id,
+          name:
+            (typeof meta?.name === "string" && meta.name) ||
+            (typeof meta?.full_name === "string" && meta.full_name) ||
+            trimmedEmail.split("@")[0] ||
+            "Client",
           email: trimmedEmail,
-          role: (COMPANY.adminEmails as readonly string[]).includes(trimmedEmail.toLowerCase()) ? "admin" : "client",
-          ref_code: authData.user.user_metadata?.ref_code || generateRefCode(trimmedEmail),
+          role: (COMPANY.adminEmails as readonly string[]).includes(trimmedEmail.toLowerCase())
+            ? "admin"
+            : "client",
+          ref_code:
+            (typeof meta?.ref_code === "string" && meta.ref_code) || generateRefCode(trimmedEmail),
           bonus_earned: 0,
         };
         await db.saveProfile(profile);
-        localStore.setUser(profile);
         setMsg({ text: "Login successful. Redirecting...", type: "success" });
         setTimeout(() => {
           onSuccess?.();
@@ -126,14 +123,14 @@ export function AuthPage({
           }
         }, 300);
       }
-    } catch (err: any) {
-      setMsg({ text: err?.message || "An unexpected error occurred.", type: "error" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setMsg({ text: message, type: "error" });
     } finally {
       setIsLoading(false);
     }
   }
 
-  // 3. Sign Up with Email & Password
   async function handleEmailPasswordSignup(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -169,7 +166,7 @@ export function AuthPage({
             name: trimmedName,
             full_name: trimmedName,
             ref_code: generatedCode,
-            referred_by: refCode || null,
+            ...(refCode ? { referred_by: refCode } : {}),
           },
         },
       });
@@ -184,7 +181,6 @@ export function AuthPage({
         userId = authData.user.id;
       }
 
-      // If Supabase has email confirmation enabled and did not return a session
       if (authData?.user && !authData?.session) {
         setIsLoading(false);
         setMsg({
@@ -194,16 +190,18 @@ export function AuthPage({
         return;
       }
     } catch {
-      // Continue with local storage registration fallback
+      // Fall through to profile creation below when session is available
     }
 
     const newProfile: Profile = {
       id: userId,
       name: trimmedName,
       email: trimmedEmail,
-      role: (COMPANY.adminEmails as readonly string[]).includes(trimmedEmail.toLowerCase()) ? "admin" : "client",
+      role: (COMPANY.adminEmails as readonly string[]).includes(trimmedEmail.toLowerCase())
+        ? "admin"
+        : "client",
       ref_code: generatedCode,
-      referred_by: refCode || null,
+      ...(refCode ? { referred_by: refCode } : {}),
       bonus_earned: 0,
     };
 
@@ -211,7 +209,6 @@ export function AuthPage({
       localStore.recordReferral(refCode, userId);
     }
     await db.saveProfile(newProfile);
-    localStore.setUser(newProfile);
     setIsLoading(false);
     setMsg({ text: "Account created successfully. Accessing client portal...", type: "success" });
     setTimeout(() => {
@@ -223,25 +220,25 @@ export function AuthPage({
     }, 400);
   }
 
-  // 4. Magic Link (Email me a secure login)
   async function handleMagicLinkSignIn() {
     const trimmedEmail = email.trim();
     if (!trimmedEmail) {
-      setMsg({ text: "Please enter your email address in the field above to receive a secure link.", type: "error" });
+      setMsg({
+        text: "Please enter your email address in the field above to receive a secure link.",
+        type: "error",
+      });
       return;
     }
     setIsLoading(true);
     setMsg(null);
     try {
       const redirectUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/dashboard`
-          : "/dashboard";
+        typeof window !== "undefined" ? `${window.location.origin}/dashboard` : "/dashboard";
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmedEmail,
         options: {
           emailRedirectTo: redirectUrl,
-          data: refCode ? { referred_by: refCode } : undefined,
+          ...(refCode ? { data: { referred_by: refCode } } : {}),
         },
       });
       if (error) {
@@ -250,14 +247,14 @@ export function AuthPage({
         setLinkSent(true);
         setMsg({ text: "Secure login link sent to your email.", type: "success" });
       }
-    } catch (err: any) {
-      setMsg({ text: err?.message || "An unexpected error occurred.", type: "error" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setMsg({ text: message, type: "error" });
     } finally {
       setIsLoading(false);
     }
   }
 
-  // 5. Reset Password
   async function handlePasswordReset(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const targetEmail = resetEmail.trim() || email.trim();
@@ -268,9 +265,7 @@ export function AuthPage({
     setIsLoading(true);
     try {
       const redirectUrl =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/dashboard`
-          : "/dashboard";
+        typeof window !== "undefined" ? `${window.location.origin}/dashboard` : "/dashboard";
       const { error } = await supabase.auth.resetPasswordForEmail(targetEmail, {
         redirectTo: redirectUrl,
       });
@@ -281,8 +276,9 @@ export function AuthPage({
         setMsg({ text: "Password reset instructions sent to your email.", type: "success" });
         setShowResetModal(false);
       }
-    } catch (err: any) {
-      setMsg({ text: err?.message || "An unexpected error occurred.", type: "error" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "An unexpected error occurred.";
+      setMsg({ text: message, type: "error" });
     } finally {
       setIsLoading(false);
     }
@@ -294,7 +290,8 @@ export function AuthPage({
         minHeight: "100vh",
         width: "100%",
         backgroundColor: "#0a192f",
-        backgroundImage: "radial-gradient(ellipse at 50% 20%, rgba(13, 37, 69, 0.7) 0%, #0a192f 70%)",
+        backgroundImage:
+          "radial-gradient(ellipse at 50% 20%, rgba(13, 37, 69, 0.7) 0%, #0a192f 70%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -303,7 +300,6 @@ export function AuthPage({
         boxSizing: "border-box",
       }}
     >
-      {/* Centered White Card */}
       <div
         style={{
           maxWidth: "440px",
@@ -316,7 +312,6 @@ export function AuthPage({
           color: "#1e293b",
         }}
       >
-        {/* Top of the card: Company logo and name */}
         <div style={{ textAlign: "center", marginBottom: "24px" }}>
           <div
             style={{
@@ -348,19 +343,11 @@ export function AuthPage({
           >
             Aetheris Capital
           </h1>
-          <p
-            style={{
-              fontSize: "13px",
-              color: "#64748b",
-              margin: 0,
-              fontWeight: 500,
-            }}
-          >
+          <p style={{ fontSize: "13px", color: "#64748b", margin: 0, fontWeight: 500 }}>
             {view === "login" ? "Log in to your account" : "Create your institutional account"}
           </p>
         </div>
 
-        {/* Message notification */}
         {msg && (
           <div
             style={{
@@ -369,16 +356,18 @@ export function AuthPage({
               fontSize: "13px",
               lineHeight: 1.4,
               marginBottom: "16px",
-              backgroundColor: msg.type === "error" ? "#fef2f2" : msg.type === "success" ? "#f0fdf4" : "#eff6ff",
+              backgroundColor:
+                msg.type === "error" ? "#fef2f2" : msg.type === "success" ? "#f0fdf4" : "#eff6ff",
               color: msg.type === "error" ? "#991b1b" : msg.type === "success" ? "#166534" : "#1e40af",
-              border: `1px solid ${msg.type === "error" ? "#fecaca" : msg.type === "success" ? "#bbf7d0" : "#bfdbfe"}`,
+              border: `1px solid ${
+                msg.type === "error" ? "#fecaca" : msg.type === "success" ? "#bbf7d0" : "#bfdbfe"
+              }`,
             }}
           >
             {msg.text}
           </div>
         )}
 
-        {/* Magic Link Sent State */}
         {linkSent ? (
           <div style={{ textAlign: "center", padding: "16px 0" }}>
             <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>✉️</div>
@@ -386,7 +375,8 @@ export function AuthPage({
               Check your email
             </h3>
             <p style={{ fontSize: "13px", color: "#64748b", lineHeight: 1.5, marginBottom: 20 }}>
-              We've sent a secure login link to <strong>{email}</strong>. Click the link in your email to instantly access your portfolio.
+              We&apos;ve sent a secure login link to <strong>{email}</strong>. Click the link in your
+              email to instantly access your portfolio.
             </p>
             <button
               type="button"
@@ -410,10 +400,9 @@ export function AuthPage({
           </div>
         ) : (
           <>
-            {/* FIRST SECTION: Continue with Google */}
             <button
               type="button"
-              onClick={handleGoogleSignIn}
+              onClick={() => void handleGoogleSignIn()}
               disabled={isLoading}
               style={{
                 width: "100%",
@@ -429,34 +418,12 @@ export function AuthPage({
                 fontWeight: 500,
                 color: "#1f2937",
                 cursor: "pointer",
-                transition: "background-color 0.15s, border-color 0.15s",
                 boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
               <span>Continue with Google</span>
             </button>
 
-            {/* DIVIDER: OR Line */}
             <div
               style={{
                 display: "flex",
@@ -465,7 +432,7 @@ export function AuthPage({
                 textAlign: "center",
               }}
             >
-              <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }}></div>
+              <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }} />
               <span
                 style={{
                   padding: "0 12px",
@@ -478,11 +445,14 @@ export function AuthPage({
               >
                 OR
               </span>
-              <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }}></div>
+              <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }} />
             </div>
 
-            {/* SECOND SECTION: Email and password input fields */}
-            <form onSubmit={view === "login" ? handleEmailPasswordLogin : handleEmailPasswordSignup}>
+            <form
+              onSubmit={
+                view === "login" ? handleEmailPasswordLogin : handleEmailPasswordSignup
+              }
+            >
               {view === "signup" && (
                 <div style={{ marginBottom: "14px" }}>
                   <label
@@ -513,9 +483,7 @@ export function AuthPage({
                       border: "1px solid #d1d5db",
                       borderRadius: "8px",
                       backgroundColor: "#ffffff",
-                      color: "#0f172a",
                       boxSizing: "border-box",
-                      outline: "none",
                     }}
                   />
                 </div>
@@ -532,7 +500,7 @@ export function AuthPage({
                     marginBottom: "5px",
                   }}
                 >
-                  Email address
+                  Email
                 </label>
                 <input
                   id="ap-email"
@@ -540,7 +508,7 @@ export function AuthPage({
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="investor@institution.com"
+                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -551,9 +519,7 @@ export function AuthPage({
                     border: "1px solid #d1d5db",
                     borderRadius: "8px",
                     backgroundColor: "#ffffff",
-                    color: "#0f172a",
                     boxSizing: "border-box",
-                    outline: "none",
                   }}
                 />
               </div>
@@ -577,8 +543,7 @@ export function AuthPage({
                   type="password"
                   required
                   autoComplete={view === "login" ? "current-password" : "new-password"}
-                  placeholder={view === "signup" ? "At least 8 characters" : "••••••••"}
-                  minLength={view === "signup" ? 8 : undefined}
+                  placeholder="Minimum 8 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -589,375 +554,227 @@ export function AuthPage({
                     border: "1px solid #d1d5db",
                     borderRadius: "8px",
                     backgroundColor: "#ffffff",
-                    color: "#0f172a",
                     boxSizing: "border-box",
-                    outline: "none",
                   }}
                 />
               </div>
 
               {view === "signup" && (
-                <>
-                  <div style={{ marginBottom: "14px" }}>
-                    <label
-                      htmlFor="ap-confirm"
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        color: "#334155",
-                        marginBottom: "5px",
-                      }}
-                    >
-                      Confirm Password
-                    </label>
-                    <input
-                      id="ap-confirm"
-                      name="confirm"
-                      type="password"
-                      required
-                      placeholder="Repeat password"
-                      minLength={8}
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={isLoading}
-                      style={{
-                        width: "100%",
-                        padding: "10px 14px",
-                        fontSize: "14px",
-                        border: "1px solid #d1d5db",
-                        borderRadius: "8px",
-                        backgroundColor: "#ffffff",
-                        color: "#0f172a",
-                        boxSizing: "border-box",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  {refCode && (
-                    <div
-                      style={{
-                        padding: "8px 12px",
-                        backgroundColor: "#f8fafc",
-                        border: "1px dashed #cbd5e1",
-                        borderRadius: "6px",
-                        fontSize: "12px",
-                        color: "#475569",
-                        marginBottom: "14px",
-                      }}
-                    >
-                      Referral Code attached: <strong style={{ color: "#0a192f" }}>{refCode}</strong>
-                    </div>
-                  )}
-
-                  <div
+                <div style={{ marginBottom: "14px" }}>
+                  <label
+                    htmlFor="ap-confirm"
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "8px",
-                      marginBottom: "16px",
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#334155",
+                      marginBottom: "5px",
                     }}
                   >
-                    <input
-                      id="ap-terms"
-                      type="checkbox"
-                      required
-                      checked={agreedToTerms}
-                      onChange={(e) => setAgreedToTerms(e.target.checked)}
-                      disabled={isLoading}
-                      style={{ marginTop: "3px", cursor: "pointer" }}
-                    />
-                    <label
-                      htmlFor="ap-terms"
-                      style={{
-                        fontSize: "12px",
-                        color: "#64748b",
-                        cursor: "pointer",
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      I agree to the Terms of Service and Privacy Policy.
-                    </label>
-                  </div>
-                </>
+                    Confirm Password
+                  </label>
+                  <input
+                    id="ap-confirm"
+                    name="confirmPassword"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="Repeat password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    disabled={isLoading}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      fontSize: "14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      backgroundColor: "#ffffff",
+                      boxSizing: "border-box",
+                    }}
+                  />
+                </div>
               )}
 
-              {/* Purple/blue Button */}
               <button
                 type="submit"
                 disabled={isLoading}
                 style={{
                   width: "100%",
-                  padding: "11px 16px",
-                  backgroundColor: "#4f46e5",
-                  border: "none",
+                  padding: "12px 16px",
                   borderRadius: "8px",
-                  color: "#ffffff",
+                  border: "none",
+                  backgroundColor: "#0a192f",
+                  color: "#f5c518",
+                  fontWeight: 700,
                   fontSize: "14px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  transition: "background-color 0.15s",
-                  boxShadow: "0 2px 4px rgba(79, 70, 229, 0.2)",
+                  cursor: isLoading ? "wait" : "pointer",
+                  opacity: isLoading ? 0.7 : 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4338ca")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4f46e5")}
               >
-                {isLoading
-                  ? "Processing..."
-                  : view === "login"
-                  ? "Login with email"
-                  : "Sign up with email"}
+                {isLoading ? "Processing…" : view === "login" ? "Log In" : "Create Account"}
               </button>
             </form>
 
-            {/* THIRD SECTION (Login only): Email me a secure login */}
             {view === "login" && (
-              <div
-                style={{
-                  marginTop: "20px",
-                  padding: "14px 16px",
-                  backgroundColor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "10px",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#4f46e5"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ flexShrink: 0, marginTop: "2px" }}
-                  >
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                  <div>
-                    <strong
-                      style={{
-                        display: "block",
-                        fontSize: "13px",
-                        color: "#1e293b",
-                        fontWeight: 600,
-                        marginBottom: "3px",
-                      }}
-                    >
-                      Email me a secure login
-                    </strong>
-                    <p
-                      style={{
-                        fontSize: "12px",
-                        color: "#64748b",
-                        lineHeight: 1.45,
-                        margin: 0,
-                      }}
-                    >
-                      Don't worry if you don't have a password or you can't remember it, we can email you a secure link.
-                    </p>
-                  </div>
-                </div>
-
+              <>
                 <button
                   type="button"
-                  onClick={handleMagicLinkSignIn}
                   disabled={isLoading}
+                  onClick={() => void handleMagicLinkSignIn()}
                   style={{
                     width: "100%",
-                    marginTop: "12px",
-                    padding: "9px 14px",
-                    backgroundColor: "#ffffff",
+                    marginTop: 10,
+                    padding: 11,
+                    borderRadius: 8,
                     border: "1px solid #d1d5db",
-                    borderRadius: "7px",
-                    color: "#1f2937",
-                    fontSize: "13px",
-                    fontWeight: 500,
+                    background: "transparent",
+                    color: "#0a192f",
+                    fontWeight: 600,
                     cursor: "pointer",
-                    transition: "background-color 0.15s",
-                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
                 >
-                  Email me a secure login
+                  Email me a Secure Login Link
                 </button>
-              </div>
-            )}
-
-            {/* BOTTOM: Reset password link and View Switch */}
-            <div
-              style={{
-                marginTop: "20px",
-                textAlign: "center",
-                fontSize: "13px",
-                color: "#64748b",
-              }}
-            >
-              {view === "login" && (
-                <div style={{ marginBottom: "10px" }}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setResetEmail(email);
-                      setShowResetModal(true);
-                    }}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#64748b",
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      textDecoration: "underline",
-                      padding: 0,
-                    }}
-                  >
-                    Reset password
-                  </button>
-                </div>
-              )}
-
-              <div>
-                {view === "login" ? (
-                  <span>
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setView("signup")}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#4f46e5",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
-                    >
-                      Sign up
-                    </button>
-                  </span>
-                ) : (
-                  <span>
-                    Already have an account?{" "}
-                    <button
-                      type="button"
-                      onClick={() => setView("login")}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        color: "#4f46e5",
-                        fontWeight: 600,
-                        fontSize: "13px",
-                        cursor: "pointer",
-                        padding: 0,
-                      }}
-                    >
-                      Log in
-                    </button>
-                  </span>
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Password Reset Modal */}
-      {showResetModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(10, 25, 47, 0.8)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "16px",
-            zIndex: 1000,
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowResetModal(false);
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "#ffffff",
-              borderRadius: "14px",
-              padding: "28px 24px",
-              maxWidth: "400px",
-              width: "100%",
-              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
-              color: "#1e293b",
-            }}
-          >
-            <h3 style={{ fontSize: "17px", fontWeight: 700, margin: "0 0 6px 0", color: "#0a192f" }}>
-              Reset your password
-            </h3>
-            <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.4 }}>
-              Enter your email address and we'll send you a link to reset your password.
-            </p>
-            <form onSubmit={handlePasswordReset}>
-              <input
-                type="email"
-                required
-                placeholder="investor@institution.com"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px 12px",
-                  fontSize: "14px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "7px",
-                  marginBottom: "14px",
-                  boxSizing: "border-box",
-                }}
-              />
-              <div style={{ display: "flex", gap: "10px" }}>
                 <button
                   type="button"
-                  onClick={() => setShowResetModal(false)}
+                  onClick={() => {
+                    setResetEmail(email);
+                    setShowResetModal(true);
+                  }}
                   style={{
-                    flex: 1,
-                    padding: "9px",
-                    backgroundColor: "#f1f5f9",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "7px",
-                    fontSize: "13px",
-                    fontWeight: 500,
-                    color: "#475569",
+                    display: "block",
+                    margin: "12px auto 0",
+                    border: 0,
+                    background: "transparent",
+                    color: "#64748b",
+                    fontSize: 12,
                     cursor: "pointer",
+                    textDecoration: "underline",
                   }}
                 >
-                  Cancel
+                  Forgot password?
                 </button>
+              </>
+            )}
+
+            <p style={{ textAlign: "center", marginTop: 18, fontSize: 13, color: "#64748b" }}>
+              {view === "login" ? (
+                <>
+                  No account?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setView("signup")}
+                    style={{
+                      border: 0,
+                      background: "transparent",
+                      color: "#4f46e5",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Create one
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already registered?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setView("login")}
+                    style={{
+                      border: 0,
+                      background: "transparent",
+                      color: "#4f46e5",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Log in
+                  </button>
+                </>
+              )}
+            </p>
+          </>
+        )}
+
+        {showResetModal && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(10,25,47,0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 16,
+              zIndex: 50,
+            }}
+          >
+            <div
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                background: "#fff",
+                borderRadius: 12,
+                padding: 24,
+              }}
+            >
+              <h3 style={{ margin: "0 0 8px", color: "#0a192f" }}>Reset password</h3>
+              <p style={{ color: "#64748b", fontSize: 13, marginBottom: 12 }}>
+                We&apos;ll email a secure reset link.
+              </p>
+              <form onSubmit={handlePasswordReset}>
+                <input
+                  type="email"
+                  required
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 12,
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    marginBottom: 10,
+                  }}
+                />
                 <button
                   type="submit"
                   disabled={isLoading}
                   style={{
-                    flex: 1,
-                    padding: "9px",
-                    backgroundColor: "#4f46e5",
-                    border: "none",
-                    borderRadius: "7px",
-                    fontSize: "13px",
-                    fontWeight: 600,
-                    color: "#ffffff",
-                    cursor: "pointer",
+                    width: "100%",
+                    padding: 11,
+                    borderRadius: 8,
+                    border: 0,
+                    background: "#0a192f",
+                    color: "#f5c518",
+                    fontWeight: 700,
                   }}
                 >
-                  {isLoading ? "Sending..." : "Send link"}
+                  {isLoading ? "Sending…" : "Send Reset Link"}
                 </button>
-              </div>
-            </form>
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    padding: 10,
+                    border: 0,
+                    background: "transparent",
+                    color: "#64748b",
+                  }}
+                >
+                  Cancel
+                </button>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
+
 export default AuthPage;
