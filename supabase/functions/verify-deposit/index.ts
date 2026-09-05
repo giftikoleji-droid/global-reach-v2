@@ -27,6 +27,18 @@ const PLANS: Record<string, { name: string; amount: number; returnPct: number; t
 const MIN_CONFIRMATIONS = 3;
 const USD_TOLERANCE = 0.03;
 
+type BitcoinOutput = {
+  scriptpubkey_address?: string;
+  value?: number;
+};
+
+type TronTransfer = {
+  transaction_id?: string;
+  txID?: string;
+  to?: string;
+  value?: string | number;
+};
+
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
@@ -58,7 +70,8 @@ async function verifyBitcoin(txHash: string, expectedUsd: number) {
   if (confirmations < MIN_CONFIRMATIONS) return { ok: false, confirmations, error: `Bitcoin transaction has only ${confirmations} confirmation(s); ${MIN_CONFIRMATIONS} are required.` };
   const prices = await getUsdPrices();
   const expectedBtc = expectedUsd / prices.BTC;
-  const receivedBtc = (tx.vout || []).filter((o: any) => String(o.scriptpubkey_address || "").toLowerCase() === COMPANY_WALLETS.BTC.toLowerCase()).reduce((sum: number, o: any) => sum + Number(o.value || 0) / 1e8, 0);
+  const outputs = (tx.vout || []) as BitcoinOutput[];
+  const receivedBtc = outputs.filter((o) => String(o.scriptpubkey_address || "").toLowerCase() === COMPANY_WALLETS.BTC.toLowerCase()).reduce((sum, o) => sum + Number(o.value || 0) / 1e8, 0);
   if (receivedBtc < expectedBtc * (1 - USD_TOLERANCE)) return { ok: false, confirmations, error: "Bitcoin transaction amount or recipient does not match the selected plan." };
   return { ok: true, confirmations, received: receivedBtc };
 }
@@ -112,7 +125,8 @@ async function verifyUsdtTrc20(txHash: string, expectedUsd: number) {
   const transferResponse = await fetch(`${apiUrl}/v1/accounts/${COMPANY_WALLETS["USDT-TRC20"]}/transactions/trc20?limit=200&only_to=true&contract_address=TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t`, { headers });
   if (!transferResponse.ok) return { ok: false, confirmations, error: "USDT transfer details are temporarily unavailable." };
   const transferBody = await transferResponse.json();
-  const transfer = (transferBody.data || []).find((item: any) => String(item.transaction_id || item.txID || "").toLowerCase() === txHash.toLowerCase() && String(item.to || "").toLowerCase() === COMPANY_WALLETS["USDT-TRC20"].toLowerCase());
+  const transfers = (transferBody.data || []) as TronTransfer[];
+  const transfer = transfers.find((item) => String(item.transaction_id || item.txID || "").toLowerCase() === txHash.toLowerCase() && String(item.to || "").toLowerCase() === COMPANY_WALLETS["USDT-TRC20"].toLowerCase());
   if (!transfer) return { ok: false, confirmations, error: "USDT recipient does not match the official settlement address." };
   const received = Number(transfer.value || 0) / 1e6;
   if (received < expectedUsd * (1 - USD_TOLERANCE)) return { ok: false, confirmations, error: "USDT amount does not match the selected plan." };
@@ -183,8 +197,9 @@ serve(async (req: Request) => {
     }
     console.log("[verify-deposit] investment activated", { userId: user.id, investmentId: data.id, network, confirmations: result.confirmations });
     return json({ success: true, investment: data });
-  } catch (error: any) {
-    console.error("[verify-deposit] verification error", { message: error?.message });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[verify-deposit] verification error", { message });
     return json({ error: "Transaction verification is temporarily unavailable. No investment was activated." }, 503);
   }
 });
