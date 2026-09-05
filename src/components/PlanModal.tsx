@@ -38,7 +38,9 @@ export function PlanModal({
 
   if (!planId || !plan) return null;
 
-  const depositAddress = WALLETS[network] ?? "Select network above";
+  const walletKey = network as keyof typeof WALLETS;
+  const depositAddress =
+    network && walletKey in WALLETS ? WALLETS[walletKey] : "Select network above";
 
   function continueToDeposit(e: FormEvent) {
     e.preventDefault();
@@ -76,8 +78,9 @@ export function PlanModal({
         },
       });
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || error?.message || "Transaction could not be verified.");
+      const result = data as { success?: boolean; error?: string } | null | undefined;
+      if (error || !result?.success) {
+        throw new Error(result?.error || error?.message || "Transaction could not be verified.");
       }
 
       setBusy(false);
@@ -193,7 +196,9 @@ export function PlanModal({
             </button>
 
             {(() => {
-              const depositProof = (WALLET_PROOFS as Record<string, any>)[network] ?? null;
+              const proofKey = network as keyof typeof WALLET_PROOFS;
+              const depositProof =
+                network && proofKey in WALLET_PROOFS ? WALLET_PROOFS[proofKey] : undefined;
               if (!depositProof) return null;
               return (
                 <div
