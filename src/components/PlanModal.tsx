@@ -47,30 +47,37 @@ export function PlanModal({
 
   if (!planId || !plan) return null;
 
-  const resolvedWallet =
+  const resolvedWallet: string | undefined =
     network && network in WALLETS ? WALLETS[network as WalletNetwork] : undefined;
   const depositAddress: string = resolvedWallet ?? "Select network above";
 
-  function continueToDeposit(e: FormEvent) {
+  function continueToDeposit(e: FormEvent): void {
     e.preventDefault();
     if (!user) {
       onRequireAuth();
       return;
     }
-    if (!network) return setMsg({ text: "Please select a payout network.", type: "error" });
-    if (!address.trim()) return setMsg({ text: "Please enter your payout wallet address.", type: "error" });
+    if (!network) {
+      setMsg({ text: "Please select a payout network.", type: "error" });
+      return;
+    }
+    if (!address.trim()) {
+      setMsg({ text: "Please enter your payout wallet address.", type: "error" });
+      return;
+    }
     setMsg(null);
     setShowDeposit(true);
   }
 
-  async function confirmDeposit() {
+  async function confirmDeposit(): Promise<void> {
     if (!plan) return;
     if (!user) {
       onRequireAuth();
       return;
     }
     if (txHash.trim().length < 8) {
-      return setMsg({ text: "Please enter a valid Transaction Hash / ID.", type: "error" });
+      setMsg({ text: "Please enter a valid Transaction Hash / ID.", type: "error" });
+      return;
     }
 
     setBusy(true);
@@ -212,7 +219,7 @@ export function PlanModal({
 
             {(() => {
               const proofKey = network as WalletNetwork;
-              const depositProof =
+              const depositProof: (typeof WALLET_PROOFS)[WalletNetwork] | undefined =
                 network && proofKey in WALLET_PROOFS ? WALLET_PROOFS[proofKey] : undefined;
               if (!depositProof) return null;
               return (

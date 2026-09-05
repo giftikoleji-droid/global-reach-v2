@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from "react";
 import { db, localStore } from "../lib/aetheris";
 
-export function LeadForm({ onLeadSubmitted }: { onLeadSubmitted?: () => void }) {
+export function LeadForm({ onLeadSubmitted }: { onLeadSubmitted?: () => void }): JSX.Element {
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const fullName = String(fd.get("fullName") ?? "").trim();
