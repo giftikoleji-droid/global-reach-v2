@@ -148,7 +148,18 @@ serve(async (req: Request) => {
       });
     }
 
-    const dashboardUrl = `${Deno.env.get("PUBLIC_APP_URL") || "https://global-reach-hub-zucz.vercel.app"}/dashboard?support_ticket=${encodeURIComponent(ticketId)}`;
+    const publicAppUrl = (Deno.env.get("PUBLIC_APP_URL") || "").replace(/\/$/, "");
+    if (!publicAppUrl) {
+      console.error("[support-escalation] PUBLIC_APP_URL is missing");
+      return json({
+        success: true,
+        ticket_id: ticketId,
+        status: "open",
+        email_dispatched: false,
+        warning: "Ticket created, but PUBLIC_APP_URL is not configured for dashboard links.",
+      });
+    }
+    const dashboardUrl = `${publicAppUrl}/dashboard?support_ticket=${encodeURIComponent(ticketId)}`;
     const safeTicketId = escapeHtml(ticketId);
     const safeName = escapeHtml(clientName || "Not provided");
     const safeEmail = escapeHtml(clientEmail);

@@ -18,7 +18,11 @@ export function ReferralsPage({ profile }: { profile: Profile | null }) {
   const [referredCount, setReferredCount] = useState(0);
   const [verifiedCount, setVerifiedCount] = useState(0);
   const refCode = profile?.ref_code || "AETHCLIENT";
-  const referralLink = `https://global-reach-hub-zucz.vercel.app/?ref=${encodeURIComponent(refCode)}&utm_source=referral`;
+  const appBase = (
+    (import.meta.env["VITE_PUBLIC_APP_URL"] as string | undefined) ||
+    (typeof window !== "undefined" ? window.location.origin : "")
+  ).replace(/\/$/, "");
+  const referralLink = `${appBase}/?ref=${encodeURIComponent(refCode)}&utm_source=referral`;
 
   useEffect(() => {
     let cancelled = false;
