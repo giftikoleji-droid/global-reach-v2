@@ -58,7 +58,8 @@ export function PlanModal({
       return;
     }
     if (!network) return setMsg({ text: "Please select a payout network.", type: "error" });
-    if (!address.trim()) return setMsg({ text: "Please enter your payout wallet address.", type: "error" });
+    if (!address.trim())
+      return setMsg({ text: "Please enter your payout wallet address.", type: "error" });
     setMsg(null);
     setShowDeposit(true);
   }
@@ -127,14 +128,18 @@ export function PlanModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="plan-box" style={{ position: "relative", zIndex: 10000, pointerEvents: "auto" }}>
+      <div
+        className="plan-box"
+        style={{ position: "relative", zIndex: 10000, pointerEvents: "auto" }}
+      >
         <button className="close" type="button" onClick={onClose} aria-label="Close">
           ×
         </button>
 
         <h2>Activate Investment Mandate</h2>
         <p className="auth-sub">
-          Register your settlement wallet, transmit allocation to company escrow, and confirm tracking.
+          Register your settlement wallet, transmit allocation to company escrow, and confirm
+          tracking.
         </p>
 
         {msg && <div className={"message show " + msg.type}>{msg.text}</div>}
@@ -147,7 +152,9 @@ export function PlanModal({
         {!showDeposit ? (
           <form onSubmit={continueToDeposit}>
             <div className="form-group">
-              <label htmlFor="payout-network">Settlement Network (Where returns will be paid)</label>
+              <label htmlFor="payout-network">
+                Settlement Network (Where returns will be paid)
+              </label>
               <select
                 id="payout-network"
                 required
@@ -189,7 +196,14 @@ export function PlanModal({
           </form>
         ) : (
           <div style={{ marginTop: 12 }}>
-            <div style={{ fontSize: "0.85rem", fontWeight: 700, marginBottom: 8, color: "var(--cyan)" }}>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                fontWeight: 700,
+                marginBottom: 8,
+                color: "var(--cyan)",
+              }}
+            >
               Step 1: Transmit {formatCurrency(plan.amount)} to Company Escrow Wallet
             </div>
 
@@ -250,14 +264,19 @@ export function PlanModal({
                         href={depositProof.verificationLink}
                         target="_blank"
                         rel="noreferrer"
-                        style={{ color: "var(--cyan)", fontSize: ".8rem", textDecoration: "underline" }}
+                        style={{
+                          color: "var(--cyan)",
+                          fontSize: ".8rem",
+                          textDecoration: "underline",
+                        }}
                       >
                         Verify Signature on Etherscan ↗
                       </a>
                     </div>
                   )}
                   <div style={{ marginTop: 8, fontSize: ".75rem", color: "var(--muted)" }}>
-                    Verify company wallet ownership on-chain using the cryptographic signature above.
+                    Verify company wallet ownership on-chain using the cryptographic signature
+                    above.
                   </div>
                 </div>
               );
@@ -284,9 +303,11 @@ export function PlanModal({
               {busy ? "Verifying On-Chain…" : "Verify Deposit & Begin Tracking"}
             </button>
 
-            <p style={{ color: "var(--muted)", fontSize: ".72rem", marginTop: 14, lineHeight: 1.5 }}>
-              Settlement desk operates under global standard market hours. Payout executes automatically
-              at term maturity. Support:{" "}
+            <p
+              style={{ color: "var(--muted)", fontSize: ".72rem", marginTop: 14, lineHeight: 1.5 }}
+            >
+              Settlement desk operates under global standard market hours. Payout executes
+              automatically at term maturity. Support:{" "}
               <a href={`mailto:${COMPANY.email}`} style={{ color: "var(--cyan)" }}>
                 {COMPANY.email}
               </a>

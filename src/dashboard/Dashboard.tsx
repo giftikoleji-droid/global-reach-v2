@@ -96,7 +96,7 @@ function DashboardShell({
           ) : route === "investments" ? (
             <InvestmentsPage
               activeInvestment={portfolio.activeInvestment}
-              onChoosePlan={onChoosePlan}
+              {...(onChoosePlan ? { onChoosePlan } : {})}
               onBack={() => portfolio.navigateTo("dashboard")}
             />
           ) : route === "wallets" ? (

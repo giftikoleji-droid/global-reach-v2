@@ -44,7 +44,7 @@ export type Plan = {
   actionText: string;
 };
 
-export const PLANS: Plan[] = [
+export const PLANS: [Plan, ...Plan[]] = [
   {
     id: "starter",
     name: "Essential Plan",
@@ -179,7 +179,10 @@ export const WALLETS: { readonly [K in WalletNetwork]: string } = {
 
 export function formatCurrency(n: number | string, decimals: number = 0): string {
   const val = Number(n || 0);
-  return "$" + val.toLocaleString(LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return (
+    "$" +
+    val.toLocaleString(LOCALE, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
+  );
 }
 
 export function formatUSD(n: number | string | undefined | null, decimals: number = 2): string {
@@ -642,7 +645,9 @@ export const db = {
             end_date: String(
               d.end_date ||
                 d.maturity_date ||
-                new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
+                new Date(
+                  Date.now() + Number(d.term_days || plan.termDays) * 86400000,
+                ).toISOString(),
             ),
             ...(d.created_at ? { created_at: String(d.created_at) } : {}),
           } satisfies Investment;
@@ -689,7 +694,9 @@ export const db = {
             end_date: String(
               d.end_date ||
                 d.maturity_date ||
-                new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
+                new Date(
+                  Date.now() + Number(d.term_days || plan.termDays) * 86400000,
+                ).toISOString(),
             ),
             ...(d.created_at ? { created_at: String(d.created_at) } : {}),
           } satisfies Investment;

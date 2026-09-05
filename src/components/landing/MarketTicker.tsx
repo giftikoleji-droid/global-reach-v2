@@ -15,20 +15,14 @@ function TickItem({ t }: { t: Tick }) {
   const up = t.change >= 0;
   return (
     <span className="flex shrink-0 items-center gap-2 px-5">
-      <span className="font-mono text-xs tracking-[0.12em] text-muted-foreground">
-        {t.symbol}
-      </span>
+      <span className="font-mono text-xs tracking-[0.12em] text-muted-foreground">{t.symbol}</span>
       <span className="font-mono text-xs text-foreground">{t.price}</span>
       <span
         className={`flex items-center gap-0.5 font-mono text-xs ${
           up ? "text-positive" : "text-negative"
         }`}
       >
-        {up ? (
-          <ArrowUpRight className="size-3.5" />
-        ) : (
-          <ArrowDownRight className="size-3.5" />
-        )}
+        {up ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
         {up ? "+" : ""}
         {t.change.toFixed(2)}%
       </span>
@@ -43,9 +37,7 @@ export function MarketTicker() {
       <div className="glass-bar flex items-stretch overflow-hidden rounded-2xl border border-border shadow-[var(--shadow-elevated)]">
         <div className="flex shrink-0 items-center gap-2 border-r border-hairline bg-surface-2/60 px-4">
           <span className="animate-pulse-dot size-2 rounded-full bg-positive" />
-          <span className="eyebrow hidden text-foreground sm:inline">
-            Market&nbsp;live
-          </span>
+          <span className="eyebrow hidden text-foreground sm:inline">Market&nbsp;live</span>
           <Radio className="size-4 text-positive sm:hidden" />
         </div>
         <div className="marquee-mask flex min-w-0 flex-1 items-center overflow-hidden py-2.5">

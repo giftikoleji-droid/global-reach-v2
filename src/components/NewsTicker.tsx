@@ -36,14 +36,20 @@ export function NewsTicker({ hidden }: { hidden?: boolean }) {
           ) : (
             loop.map((n, i) =>
               n.url ? (
-                <a className="news-item" key={i} href={n.url} target="_blank" rel="noopener noreferrer">
+                <a
+                  className="news-item"
+                  key={i}
+                  href={n.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <span className="src">{n.source}</span> · {n.title}
                 </a>
               ) : (
                 <span className="news-item" key={i}>
                   <span className="src">{n.source}</span> · {n.title}
                 </span>
-              )
+              ),
             )
           )}
         </div>

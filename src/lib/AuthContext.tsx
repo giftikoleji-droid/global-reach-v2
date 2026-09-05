@@ -13,7 +13,7 @@ interface AuthContextType {
     name: string,
     email: string,
     pass: string,
-    refCode?: string
+    refCode?: string,
   ) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshProfile: () => Promise<void>;

@@ -37,12 +37,17 @@ export function useClientPortfolio(userId?: string) {
     }
   }, [userId]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const activeInvestment = investments.find((item) => {
-    const status = String(item.status || "").trim().toLowerCase();
-    return status === "active";
-  }) || null;
+  const activeInvestment =
+    investments.find((item) => {
+      const status = String(item.status || "")
+        .trim()
+        .toLowerCase();
+      return status === "active";
+    }) || null;
 
   return {
     balance,

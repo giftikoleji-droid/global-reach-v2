@@ -107,14 +107,17 @@ const ChartTooltipContent = React.forwardRef<
     active?: boolean;
     payload?: ReadonlyArray<TooltipPayloadItem>;
     label?: React.ReactNode;
-    labelFormatter?: (label: React.ReactNode, payload: ReadonlyArray<TooltipPayloadItem>) => React.ReactNode;
+    labelFormatter?: (
+      label: React.ReactNode,
+      payload: ReadonlyArray<TooltipPayloadItem>,
+    ) => React.ReactNode;
     labelClassName?: string;
     formatter?: (
       value: TooltipPayloadItem["value"],
       name: string,
       item: TooltipPayloadItem,
       index: number,
-      payload: Record<string, unknown>
+      payload: Record<string, unknown>,
     ) => React.ReactNode;
     color?: string;
     hideLabel?: boolean;

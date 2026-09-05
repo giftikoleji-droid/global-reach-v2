@@ -124,7 +124,8 @@
   --sidebar-ring: oklch(0.79 0.14 88 / 45%);
 
   --gradient-gold: linear-gradient(135deg, var(--gold-soft), var(--gold));
-  --gradient-shell: radial-gradient(
+  --gradient-shell:
+    radial-gradient(
       120% 80% at 50% -10%,
       color-mix(in oklab, var(--gold) 12%, transparent),
       transparent 60%
@@ -185,13 +186,7 @@
 }
 
 @utility marquee-mask {
-  mask-image: linear-gradient(
-    to right,
-    transparent,
-    black 6%,
-    black 94%,
-    transparent
-  );
+  mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
 }
 
 @utility eyebrow {

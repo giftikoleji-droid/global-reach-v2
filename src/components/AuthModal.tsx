@@ -59,7 +59,11 @@ export function AuthModal({
     }
   }
 
-  function buildProfile(userId: string, userEmail: string, metadata?: Record<string, unknown>): Profile {
+  function buildProfile(
+    userId: string,
+    userEmail: string,
+    metadata?: Record<string, unknown>,
+  ): Profile {
     const normalized = userEmail.trim().toLowerCase();
     const metaName = metadata ? metadata["name"] : undefined;
     const metaFullName = metadata ? metadata["full_name"] : undefined;
@@ -79,7 +83,11 @@ export function AuthModal({
     };
   }
 
-  async function finishSupabaseUser(userId: string, userEmail: string, metadata?: Record<string, unknown>) {
+  async function finishSupabaseUser(
+    userId: string,
+    userEmail: string,
+    metadata?: Record<string, unknown>,
+  ) {
     const fetched = await db.getProfile(userId);
     const profile = fetched || buildProfile(userId, userEmail, metadata);
     await db.saveProfile(profile);
@@ -116,7 +124,10 @@ export function AuthModal({
           loginData.user.user_metadata as Record<string, unknown> | undefined,
         );
         setBusy(false);
-        setMsg({ text: "Authentication successful. Entering your client portal…", type: "success" });
+        setMsg({
+          text: "Authentication successful. Entering your client portal…",
+          type: "success",
+        });
         setTimeout(() => goDashboard(profile), 250);
         return;
       }
@@ -153,7 +164,10 @@ export function AuthModal({
             type: "error",
           });
         } else {
-          setMsg({ text: signupError.message || "We could not complete authentication.", type: "error" });
+          setMsg({
+            text: signupError.message || "We could not complete authentication.",
+            type: "error",
+          });
         }
         setBusy(false);
         return;
@@ -176,7 +190,10 @@ export function AuthModal({
         );
         if (refCode) localStore.recordReferral(refCode, signupData.user.id);
         setBusy(false);
-        setMsg({ text: "Account created successfully. Entering your client portal…", type: "success" });
+        setMsg({
+          text: "Account created successfully. Entering your client portal…",
+          type: "success",
+        });
         setTimeout(() => goDashboard(profile), 250);
         return;
       }
@@ -341,7 +358,14 @@ export function AuthModal({
           >
             Æ
           </div>
-          <h2 style={{ margin: 0, color: "#F8FAFC", fontFamily: "'Playfair Display',Georgia,serif", fontSize: 24 }}>
+          <h2
+            style={{
+              margin: 0,
+              color: "#F8FAFC",
+              fontFamily: "'Playfair Display',Georgia,serif",
+              fontSize: 24,
+            }}
+          >
             Welcome to Aetheris Capital
           </h2>
           <p style={{ margin: "7px 0 0", color: "#94A3B8", fontSize: 13 }}>
@@ -369,7 +393,8 @@ export function AuthModal({
                     ? "rgba(16,185,129,.35)"
                     : "rgba(212,175,55,.3)"
               }`,
-              color: msg.type === "error" ? "#FCA5A5" : msg.type === "success" ? "#A7F3D0" : "#FDE68A",
+              color:
+                msg.type === "error" ? "#FCA5A5" : msg.type === "success" ? "#A7F3D0" : "#FDE68A",
             }}
           >
             {msg.text}
@@ -378,15 +403,36 @@ export function AuthModal({
 
         {linkSent ? (
           <div style={{ textAlign: "center", padding: "12px 0 4px" }}>
-            <p style={{ color: "#E5E7EB", fontSize: 13 }}>Check your email for the secure login link.</p>
-            <button type="button" onClick={() => setLinkSent(false)} style={{ marginTop: 6, background: "transparent", border: 0, color: "#D4AF37", cursor: "pointer" }}>
+            <p style={{ color: "#E5E7EB", fontSize: 13 }}>
+              Check your email for the secure login link.
+            </p>
+            <button
+              type="button"
+              onClick={() => setLinkSent(false)}
+              style={{
+                marginTop: 6,
+                background: "transparent",
+                border: 0,
+                color: "#D4AF37",
+                cursor: "pointer",
+              }}
+            >
               Back to email and password
             </button>
           </div>
         ) : (
           <>
             <form onSubmit={handleContinue}>
-              <label htmlFor="unified-email" style={{ display: "block", marginBottom: 6, color: "#CBD5E1", fontSize: 12, fontWeight: 700 }}>
+              <label
+                htmlFor="unified-email"
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: "#CBD5E1",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
                 Email
               </label>
               <input
@@ -397,10 +443,28 @@ export function AuthModal({
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
-                style={{ width: "100%", boxSizing: "border-box", padding: "12px 13px", marginBottom: 13, borderRadius: 9, border: "1px solid #374151", background: "#111827", color: "#F8FAFC" }}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 13px",
+                  marginBottom: 13,
+                  borderRadius: 9,
+                  border: "1px solid #374151",
+                  background: "#111827",
+                  color: "#F8FAFC",
+                }}
               />
 
-              <label htmlFor="unified-password" style={{ display: "block", marginBottom: 6, color: "#CBD5E1", fontSize: 12, fontWeight: 700 }}>
+              <label
+                htmlFor="unified-password"
+                style={{
+                  display: "block",
+                  marginBottom: 6,
+                  color: "#CBD5E1",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
                 Password
               </label>
               <div style={{ position: "relative", marginBottom: 14 }}>
@@ -412,42 +476,175 @@ export function AuthModal({
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Minimum 8 characters"
                   required
-                  style={{ width: "100%", boxSizing: "border-box", padding: "12px 82px 12px 13px", borderRadius: 9, border: "1px solid #374151", background: "#111827", color: "#F8FAFC" }}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: "12px 82px 12px 13px",
+                    borderRadius: 9,
+                    border: "1px solid #374151",
+                    background: "#111827",
+                    color: "#F8FAFC",
+                  }}
                 />
-                <button type="button" onClick={() => setShowPassword((v) => !v)} style={{ position: "absolute", right: 8, top: 7, padding: "6px 8px", border: 0, background: "transparent", color: "#D4AF37", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  style={{
+                    position: "absolute",
+                    right: 8,
+                    top: 7,
+                    padding: "6px 8px",
+                    border: 0,
+                    background: "transparent",
+                    color: "#D4AF37",
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                  }}
+                >
                   {showPassword ? "Hide" : "Show"}
                 </button>
               </div>
 
-              <button type="submit" disabled={busy} style={{ width: "100%", padding: 12, borderRadius: 9, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.7 : 1 }}>
+              <button
+                type="submit"
+                disabled={busy}
+                style={{
+                  width: "100%",
+                  padding: 12,
+                  borderRadius: 9,
+                  border: "1px solid #D4AF37",
+                  background: "#D4AF37",
+                  color: "#0A0A0F",
+                  fontWeight: 800,
+                  cursor: busy ? "wait" : "pointer",
+                  opacity: busy ? 0.7 : 1,
+                }}
+              >
                 {busy ? "Processing…" : "Continue"}
               </button>
             </form>
 
-            <button type="button" disabled={busy} onClick={() => void handleMagicLink()} style={{ width: "100%", marginTop: 10, padding: 11, borderRadius: 9, border: "1px solid rgba(212,175,55,.4)", background: "transparent", color: "#D4AF37", fontWeight: 700, cursor: "pointer" }}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void handleMagicLink()}
+              style={{
+                width: "100%",
+                marginTop: 10,
+                padding: 11,
+                borderRadius: 9,
+                border: "1px solid rgba(212,175,55,.4)",
+                background: "transparent",
+                color: "#D4AF37",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
               Send me a Secure Login Link
             </button>
 
-            <button type="button" disabled={busy} onClick={() => void handleGoogleSignIn()} style={{ width: "100%", marginTop: 10, padding: 11, borderRadius: 9, border: "1px solid #374151", background: "#111827", color: "#F8FAFC", fontWeight: 700, cursor: "pointer" }}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void handleGoogleSignIn()}
+              style={{
+                width: "100%",
+                marginTop: 10,
+                padding: 11,
+                borderRadius: 9,
+                border: "1px solid #374151",
+                background: "#111827",
+                color: "#F8FAFC",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
               Continue with Google
             </button>
 
-            <button type="button" onClick={() => { setResetEmail(email); setShowReset(true); }} style={{ display: "block", margin: "15px auto 0", border: 0, background: "transparent", color: "#94A3B8", fontSize: 11, cursor: "pointer", textDecoration: "underline" }}>
+            <button
+              type="button"
+              onClick={() => {
+                setResetEmail(email);
+                setShowReset(true);
+              }}
+              style={{
+                display: "block",
+                margin: "15px auto 0",
+                border: 0,
+                background: "transparent",
+                color: "#94A3B8",
+                fontSize: 11,
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
               Forgot password?
             </button>
           </>
         )}
 
         {showReset && (
-          <div style={{ position: "absolute", inset: 0, padding: 24, background: "#0A0A0F", borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              padding: 24,
+              background: "#0A0A0F",
+              borderRadius: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
             <div style={{ width: "100%" }}>
               <h3 style={{ margin: "0 0 8px", color: "#F8FAFC" }}>Reset your password</h3>
               <form onSubmit={handlePasswordReset}>
-                <input type="email" value={resetEmail} onChange={(e) => setResetEmail(e.target.value)} placeholder="you@example.com" required style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 9, border: "1px solid #374151", background: "#111827", color: "#F8FAFC" }} />
-                <button type="submit" disabled={busy} style={{ width: "100%", marginTop: 10, padding: 11, borderRadius: 9, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800 }}>
+                <input
+                  type="email"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 12,
+                    borderRadius: 9,
+                    border: "1px solid #374151",
+                    background: "#111827",
+                    color: "#F8FAFC",
+                  }}
+                />
+                <button
+                  type="submit"
+                  disabled={busy}
+                  style={{
+                    width: "100%",
+                    marginTop: 10,
+                    padding: 11,
+                    borderRadius: 9,
+                    border: "1px solid #D4AF37",
+                    background: "#D4AF37",
+                    color: "#0A0A0F",
+                    fontWeight: 800,
+                  }}
+                >
                   {busy ? "Sending…" : "Send Reset Link"}
                 </button>
-                <button type="button" onClick={() => setShowReset(false)} style={{ width: "100%", marginTop: 8, padding: 10, border: 0, background: "transparent", color: "#94A3B8" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowReset(false)}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    padding: 10,
+                    border: 0,
+                    background: "transparent",
+                    color: "#94A3B8",
+                  }}
+                >
                   Cancel
                 </button>
               </form>

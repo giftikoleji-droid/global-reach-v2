@@ -12,7 +12,12 @@ export function BottomNav() {
   return (
     <nav className="dashboard-bottom-nav" aria-label="Mobile navigation">
       {items.map(([key, label, Icon]) => (
-        <button key={key} type="button" className={route === key ? "active" : ""} onClick={() => navigate(key)}>
+        <button
+          key={key}
+          type="button"
+          className={route === key ? "active" : ""}
+          onClick={() => navigate(key)}
+        >
           <Icon size={20} strokeWidth={route === key ? 2.4 : 1.8} />
           <span>{label}</span>
         </button>

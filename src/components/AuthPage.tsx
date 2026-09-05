@@ -349,7 +349,8 @@ export function AuthPage({
               marginBottom: "16px",
               backgroundColor:
                 msg.type === "error" ? "#fef2f2" : msg.type === "success" ? "#f0fdf4" : "#eff6ff",
-              color: msg.type === "error" ? "#991b1b" : msg.type === "success" ? "#166534" : "#1e40af",
+              color:
+                msg.type === "error" ? "#991b1b" : msg.type === "success" ? "#166534" : "#1e40af",
               border: `1px solid ${
                 msg.type === "error" ? "#fecaca" : msg.type === "success" ? "#bbf7d0" : "#bfdbfe"
               }`,
@@ -409,14 +410,29 @@ export function AuthPage({
 
             <div style={{ display: "flex", alignItems: "center", margin: "18px 0" }}>
               <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }} />
-              <span style={{ padding: "0 12px", fontSize: "12px", fontWeight: 600, color: "#94a3b8" }}>OR</span>
+              <span
+                style={{ padding: "0 12px", fontSize: "12px", fontWeight: 600, color: "#94a3b8" }}
+              >
+                OR
+              </span>
               <div style={{ flex: 1, borderBottom: "1px solid #e2e8f0" }} />
             </div>
 
-            <form onSubmit={view === "login" ? handleEmailPasswordLogin : handleEmailPasswordSignup}>
+            <form
+              onSubmit={view === "login" ? handleEmailPasswordLogin : handleEmailPasswordSignup}
+            >
               {view === "signup" && (
                 <div style={{ marginBottom: "14px" }}>
-                  <label htmlFor="ap-name" style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "5px" }}>
+                  <label
+                    htmlFor="ap-name"
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#334155",
+                      marginBottom: "5px",
+                    }}
+                  >
                     Full Name
                   </label>
                   <input
@@ -427,13 +443,29 @@ export function AuthPage({
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     disabled={isLoading}
-                    style={{ width: "100%", padding: "10px 14px", fontSize: "14px", border: "1px solid #d1d5db", borderRadius: "8px", boxSizing: "border-box" }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      fontSize: "14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      boxSizing: "border-box",
+                    }}
                   />
                 </div>
               )}
 
               <div style={{ marginBottom: "14px" }}>
-                <label htmlFor="ap-email" style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "5px" }}>
+                <label
+                  htmlFor="ap-email"
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: "5px",
+                  }}
+                >
                   Email
                 </label>
                 <input
@@ -445,12 +477,28 @@ export function AuthPage({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
-                  style={{ width: "100%", padding: "10px 14px", fontSize: "14px", border: "1px solid #d1d5db", borderRadius: "8px", boxSizing: "border-box" }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
 
               <div style={{ marginBottom: "14px" }}>
-                <label htmlFor="ap-password" style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "5px" }}>
+                <label
+                  htmlFor="ap-password"
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    color: "#334155",
+                    marginBottom: "5px",
+                  }}
+                >
                   Password
                 </label>
                 <input
@@ -462,13 +510,29 @@ export function AuthPage({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
-                  style={{ width: "100%", padding: "10px 14px", fontSize: "14px", border: "1px solid #d1d5db", borderRadius: "8px", boxSizing: "border-box" }}
+                  style={{
+                    width: "100%",
+                    padding: "10px 14px",
+                    fontSize: "14px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
 
               {view === "signup" && (
                 <div style={{ marginBottom: "14px" }}>
-                  <label htmlFor="ap-confirm" style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "5px" }}>
+                  <label
+                    htmlFor="ap-confirm"
+                    style={{
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      color: "#334155",
+                      marginBottom: "5px",
+                    }}
+                  >
                     Confirm Password
                   </label>
                   <input
@@ -479,7 +543,14 @@ export function AuthPage({
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={isLoading}
-                    style={{ width: "100%", padding: "10px 14px", fontSize: "14px", border: "1px solid #d1d5db", borderRadius: "8px", boxSizing: "border-box" }}
+                    style={{
+                      width: "100%",
+                      padding: "10px 14px",
+                      fontSize: "14px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      boxSizing: "border-box",
+                    }}
                   />
                 </div>
               )}
@@ -550,14 +621,34 @@ export function AuthPage({
               {view === "login" ? (
                 <>
                   No account?{" "}
-                  <button type="button" onClick={() => setView("signup")} style={{ border: 0, background: "transparent", color: "#4f46e5", fontWeight: 600, cursor: "pointer" }}>
+                  <button
+                    type="button"
+                    onClick={() => setView("signup")}
+                    style={{
+                      border: 0,
+                      background: "transparent",
+                      color: "#4f46e5",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
                     Create one
                   </button>
                 </>
               ) : (
                 <>
                   Already registered?{" "}
-                  <button type="button" onClick={() => setView("login")} style={{ border: 0, background: "transparent", color: "#4f46e5", fontWeight: 600, cursor: "pointer" }}>
+                  <button
+                    type="button"
+                    onClick={() => setView("login")}
+                    style={{
+                      border: 0,
+                      background: "transparent",
+                      color: "#4f46e5",
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
                     Log in
                   </button>
                 </>
@@ -579,7 +670,15 @@ export function AuthPage({
               zIndex: 50,
             }}
           >
-            <div style={{ width: "100%", maxWidth: 400, background: "#fff", borderRadius: 12, padding: 24 }}>
+            <div
+              style={{
+                width: "100%",
+                maxWidth: 400,
+                background: "#fff",
+                borderRadius: 12,
+                padding: 24,
+              }}
+            >
               <h3 style={{ margin: "0 0 8px", color: "#0a192f" }}>Reset password</h3>
               <form onSubmit={handlePasswordReset}>
                 <input
@@ -588,12 +687,42 @@ export function AuthPage({
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                   placeholder="you@example.com"
-                  style={{ width: "100%", boxSizing: "border-box", padding: 12, borderRadius: 8, border: "1px solid #d1d5db", marginBottom: 10 }}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 12,
+                    borderRadius: 8,
+                    border: "1px solid #d1d5db",
+                    marginBottom: 10,
+                  }}
                 />
-                <button type="submit" disabled={isLoading} style={{ width: "100%", padding: 11, borderRadius: 8, border: 0, background: "#0a192f", color: "#f5c518", fontWeight: 700 }}>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    width: "100%",
+                    padding: 11,
+                    borderRadius: 8,
+                    border: 0,
+                    background: "#0a192f",
+                    color: "#f5c518",
+                    fontWeight: 700,
+                  }}
+                >
                   {isLoading ? "Sending…" : "Send Reset Link"}
                 </button>
-                <button type="button" onClick={() => setShowResetModal(false)} style={{ width: "100%", marginTop: 8, padding: 10, border: 0, background: "transparent", color: "#64748b" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  style={{
+                    width: "100%",
+                    marginTop: 8,
+                    padding: 10,
+                    border: 0,
+                    background: "transparent",
+                    color: "#64748b",
+                  }}
+                >
                   Cancel
                 </button>
               </form>

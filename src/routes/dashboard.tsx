@@ -7,7 +7,9 @@ import { supabase } from "../lib/supabase";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       throw redirect({ to: "/login" });
     }
@@ -21,7 +23,11 @@ function DashboardRoute() {
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">Loading portfolio…</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">
+        Loading portfolio…
+      </div>
+    );
   }
   if (!session) return null;
 
@@ -38,8 +44,14 @@ function DashboardRoute() {
           planId={selectedPlanId}
           user={profile}
           onClose={() => setSelectedPlanId(null)}
-          onCreated={() => { setSelectedPlanId(null); void router.invalidate(); }}
-          onRequireAuth={() => { setSelectedPlanId(null); void router.navigate({ to: "/login" }); }}
+          onCreated={() => {
+            setSelectedPlanId(null);
+            void router.invalidate();
+          }}
+          onRequireAuth={() => {
+            setSelectedPlanId(null);
+            void router.navigate({ to: "/login" });
+          }}
         />
       )}
     </>

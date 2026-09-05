@@ -45,7 +45,10 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "pending" | "matured">("all");
-  const [toastMessage, setToastMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
   const [adminBypass, setAdminBypass] = useState(false);
 
   const isAdminUser = useMemo(() => {
@@ -175,10 +178,14 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20 mb-3">
             <span>Restricted Access · Admin Desk Only</span>
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Institutional Admin Clearance Required</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Institutional Admin Clearance Required
+          </h2>
           <p className="text-sm text-slate-300 max-w-md mx-auto mb-6 leading-relaxed">
             You are currently authenticated as{" "}
-            <span className="text-[#D4AF37] font-semibold">{currentProfile?.email || "Guest Client"}</span>{" "}
+            <span className="text-[#D4AF37] font-semibold">
+              {currentProfile?.email || "Guest Client"}
+            </span>{" "}
             (Role: {currentProfile?.role || "client"}).
           </p>
           <button
@@ -226,7 +233,8 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
               Investment Mandates & Manual Payout Ledger
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1">
-              Profit is never calculated or credited automatically. Admin credits client balance on maturity.
+              Profit is never calculated or credited automatically. Admin credits client balance on
+              maturity.
             </p>
           </div>
           <button
@@ -243,20 +251,36 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="p-4 rounded-xl bg-[#0d1938] border border-white/10">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Capital In Escrow</div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{formatUSD(metrics.totalManaged)}</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Total Capital In Escrow
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">
+            {formatUSD(metrics.totalManaged)}
+          </div>
         </div>
         <div className="p-4 rounded-xl bg-[#0d1938] border border-white/10">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Active Mandates</div>
-          <div className="text-xl sm:text-2xl font-extrabold text-[#D4AF37] tabular-nums">{metrics.activeMandates}</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Active Mandates
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-[#D4AF37] tabular-nums">
+            {metrics.activeMandates}
+          </div>
         </div>
         <div className="p-4 rounded-xl bg-[#0d1938] border border-white/10">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Matured (Paid Out)</div>
-          <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 tabular-nums">{metrics.maturedMandates}</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Matured (Paid Out)
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-emerald-400 tabular-nums">
+            {metrics.maturedMandates}
+          </div>
         </div>
         <div className="p-4 rounded-xl bg-[#0d1938] border border-white/10">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">Total Payouts Credited</div>
-          <div className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">{formatUSD(metrics.totalPayoutsDistributed)}</div>
+          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+            Total Payouts Credited
+          </div>
+          <div className="text-xl sm:text-2xl font-extrabold text-white tabular-nums">
+            {formatUSD(metrics.totalPayoutsDistributed)}
+          </div>
         </div>
       </div>
 
@@ -293,7 +317,9 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
         <div className="p-4 sm:p-5 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Coins size={18} className="text-[#D4AF37]" />
-            <h2 className="text-base font-bold text-white">Client Investments Ledger ({filteredInvestments.length})</h2>
+            <h2 className="text-base font-bold text-white">
+              Client Investments Ledger ({filteredInvestments.length})
+            </h2>
           </div>
         </div>
 
@@ -324,8 +350,12 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
                     </div>
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-bold text-white text-sm">{inv.plan_name} Mandate</span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusBadgeClass(inv.status)}`}>
+                        <span className="font-bold text-white text-sm">
+                          {inv.plan_name} Mandate
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusBadgeClass(inv.status)}`}
+                        >
                           {inv.status}
                         </span>
                         <span className="text-[11px] text-emerald-400 font-semibold">
@@ -335,11 +365,14 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
                       <div className="text-xs text-slate-300 flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span>
                           Client:{" "}
-                          <strong className="text-white">{inv.user_email || inv.user_id.slice(0, 8) + "..."}</strong>
+                          <strong className="text-white">
+                            {inv.user_email || inv.user_id.slice(0, 8) + "..."}
+                          </strong>
                         </span>
                         <span>·</span>
                         <span>
-                          Start: <span className="text-slate-400">{formatDate(inv.start_date)}</span>
+                          Start:{" "}
+                          <span className="text-slate-400">{formatDate(inv.start_date)}</span>
                         </span>
                         <span>·</span>
                         <span>
@@ -354,11 +387,17 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
 
                   <div className="flex flex-wrap sm:flex-nowrap items-center justify-between lg:justify-end gap-4">
                     <div className="text-left lg:text-right space-y-0.5">
-                      <div className="text-[11px] uppercase tracking-wider text-slate-400">Capital / Total Payout</div>
+                      <div className="text-[11px] uppercase tracking-wider text-slate-400">
+                        Capital / Total Payout
+                      </div>
                       <div className="flex items-center gap-2 lg:justify-end">
-                        <span className="text-sm font-semibold text-slate-300">{formatUSD(capital)}</span>
+                        <span className="text-sm font-semibold text-slate-300">
+                          {formatUSD(capital)}
+                        </span>
                         <span className="text-slate-500">→</span>
-                        <span className="text-base font-extrabold text-white tabular-nums">{formatUSD(totalPayout)}</span>
+                        <span className="text-base font-extrabold text-white tabular-nums">
+                          {formatUSD(totalPayout)}
+                        </span>
                       </div>
                       <div className="text-[11px] text-emerald-400">Yield: {formatUSD(profit)}</div>
                     </div>
@@ -390,7 +429,8 @@ export function AdminPanel({ currentProfile, onRefreshData }: AdminPanelProps) {
       <div className="rounded-xl bg-white/[0.03] border border-white/10 p-4 text-xs text-slate-400 flex items-start gap-2">
         <Info size={14} className="text-[#D4AF37] shrink-0 mt-0.5" />
         <div>
-          Payouts require explicit admin action. Crediting marks the mandate as <code className="text-emerald-400">matured</code>.
+          Payouts require explicit admin action. Crediting marks the mandate as{" "}
+          <code className="text-emerald-400">matured</code>.
         </div>
       </div>
     </div>

@@ -37,8 +37,8 @@ export function InvestmentsPage({
         <div className="notice-card">
           <TrendingUp size={19} />
           <span>
-            Your active mandate is <strong>{activeInvestment.plan_name}</strong>. A client account can
-            maintain one active mandate at a time.
+            Your active mandate is <strong>{activeInvestment.plan_name}</strong>. A client account
+            can maintain one active mandate at a time.
           </span>
         </div>
       )}

@@ -20,7 +20,7 @@ import {
   Sliders,
   Radio,
   Zap,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 
 interface PipelineStep {
@@ -40,29 +40,23 @@ const WORKFLOW_FILES = [
     name: "ci.yml",
     path: ".github/workflows/ci.yml",
     desc: "Quality Gate, TypeScript Typecheck, Linting & Production Build Validation",
-    content: `name: Continuous Integration & Quality Gate\n\non:\n  push:\n    branches: [ main, master, staging, dev ]\n  pull_request:\n    branches: [ main, master ]\n  workflow_dispatch:\n\njobs:\n  validate-and-build:\n    name: Lint, Typecheck & Build\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js 20.x\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: TypeScript Typecheck\n        run: npm run lint\n\n      - name: Production Build (Vite)\n        run: npm run build\n        env:\n          VITE_SUPABASE_URL: \${{ secrets.VITE_SUPABASE_URL }}\n          VITE_SUPABASE_ANON_KEY: \${{ secrets.VITE_SUPABASE_ANON_KEY }}\n\n      - name: Check Build Artifacts\n        run: |\n          echo "=== Production Build Output ==="\n          ls -lah dist/\n          echo "Build successful and verified."\n\n      - name: Upload Build Artifact\n        uses: actions/upload-artifact@v4\n        with:\n          name: production-dist\n          path: dist/\n          retention-days: 7`
+    content: `name: Continuous Integration & Quality Gate\n\non:\n  push:\n    branches: [ main, master, staging, dev ]\n  pull_request:\n    branches: [ main, master ]\n  workflow_dispatch:\n\njobs:\n  validate-and-build:\n    name: Lint, Typecheck & Build\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js 20.x\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: TypeScript Typecheck\n        run: npm run lint\n\n      - name: Production Build (Vite)\n        run: npm run build\n        env:\n          VITE_SUPABASE_URL: \${{ secrets.VITE_SUPABASE_URL }}\n          VITE_SUPABASE_ANON_KEY: \${{ secrets.VITE_SUPABASE_ANON_KEY }}\n\n      - name: Check Build Artifacts\n        run: |\n          echo "=== Production Build Output ==="\n          ls -lah dist/\n          echo "Build successful and verified."\n\n      - name: Upload Build Artifact\n        uses: actions/upload-artifact@v4\n        with:\n          name: production-dist\n          path: dist/\n          retention-days: 7`,
   },
   {
     name: "deploy-cloudflare.yml",
     path: ".github/workflows/deploy-cloudflare.yml",
     desc: "Edge Deployment to Cloudflare Workers & SPA Assets via Wrangler",
-    content: `name: Automated Deployment - Cloudflare Workers & Pages\n\non:\n  push:\n    branches:\n      - main\n  workflow_dispatch:\n\nconcurrency:\n  group: deploy-cloudflare-\${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  deploy:\n    name: Deploy to Cloudflare Network\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js 20.x\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: Build Production Bundle\n        run: npm run build\n        env:\n          VITE_SUPABASE_URL: \${{ secrets.VITE_SUPABASE_URL }}\n          VITE_SUPABASE_ANON_KEY: \${{ secrets.VITE_SUPABASE_ANON_KEY }}\n\n      - name: Deploy to Cloudflare Workers / Assets\n        uses: cloudflare/wrangler-action@v3\n        with:\n          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}\n          accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\n          command: deploy\n        env:\n          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}\n          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}`
+    content: `name: Automated Deployment - Cloudflare Workers & Pages\n\non:\n  push:\n    branches:\n      - main\n  workflow_dispatch:\n\nconcurrency:\n  group: deploy-cloudflare-\${{ github.ref }}\n  cancel-in-progress: true\n\njobs:\n  deploy:\n    name: Deploy to Cloudflare Network\n    runs-on: ubuntu-latest\n    timeout-minutes: 15\n\n    steps:\n      - name: Checkout repository\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js 20.x\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: Build Production Bundle\n        run: npm run build\n        env:\n          VITE_SUPABASE_URL: \${{ secrets.VITE_SUPABASE_URL }}\n          VITE_SUPABASE_ANON_KEY: \${{ secrets.VITE_SUPABASE_ANON_KEY }}\n\n      - name: Deploy to Cloudflare Workers / Assets\n        uses: cloudflare/wrangler-action@v3\n        with:\n          apiToken: \${{ secrets.CLOUDFLARE_API_TOKEN }}\n          accountId: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\n          command: deploy\n        env:\n          CLOUDFLARE_API_TOKEN: \${{ secrets.CLOUDFLARE_API_TOKEN }}\n          CLOUDFLARE_ACCOUNT_ID: \${{ secrets.CLOUDFLARE_ACCOUNT_ID }}`,
   },
   {
     name: "deploy-vercel.yml",
     path: ".github/workflows/deploy-vercel.yml",
     desc: "Production & PR Previews on Vercel Network",
-    content: `name: Automated Deployment - Vercel Production & Previews\n\non:\n  push:\n    branches:\n      - main\n  pull_request:\n    branches:\n      - main\n  workflow_dispatch:\n\njobs:\n  deploy-vercel:\n    name: Deploy to Vercel\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: Install Vercel CLI\n        run: npm install --global vercel@latest\n\n      - name: Pull Vercel Environment Information\n        run: vercel pull --yes --environment=\${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}\n\n      - name: Build Project Artifacts\n        run: vercel build \${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}\n\n      - name: Deploy Project Artifacts to Vercel\n        run: vercel deploy --prebuilt \${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}`
-  }
+    content: `name: Automated Deployment - Vercel Production & Previews\n\non:\n  push:\n    branches:\n      - main\n  pull_request:\n    branches:\n      - main\n  workflow_dispatch:\n\njobs:\n  deploy-vercel:\n    name: Deploy to Vercel\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n          cache: 'npm'\n\n      - name: Install dependencies\n        run: npm ci || npm install\n\n      - name: Install Vercel CLI\n        run: npm install --global vercel@latest\n\n      - name: Pull Vercel Environment Information\n        run: vercel pull --yes --environment=\${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}\n\n      - name: Build Project Artifacts\n        run: vercel build \${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}\n\n      - name: Deploy Project Artifacts to Vercel\n        run: vercel deploy --prebuilt \${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=\${{ secrets.VERCEL_TOKEN }}\n        env:\n          VERCEL_ORG_ID: \${{ secrets.VERCEL_ORG_ID }}\n          VERCEL_PROJECT_ID: \${{ secrets.VERCEL_PROJECT_ID }}`,
+  },
 ];
 
-export function CiCdPipelineModal({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+export function CiCdPipelineModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [activeTab, setActiveTab] = useState<
     "pipeline" | "workflows" | "secrets" | "webhook" | "targets"
   >("pipeline");
@@ -243,19 +237,38 @@ export function CiCdPipelineModal({
               {REPO_NAME}
             </p>
           </div>
-          <button type="button" onClick={onClose} style={{ background: "none", border: 0, color: "#94a3b8", fontSize: 24, cursor: "pointer" }}>
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "none",
+              border: 0,
+              color: "#94a3b8",
+              fontSize: 24,
+              cursor: "pointer",
+            }}
+          >
             ×
           </button>
         </div>
 
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", padding: "0 16px", overflowX: "auto" }}>
-          {([
-            { id: "pipeline", label: "Pipeline Visualizer & Runner", icon: Workflow },
-            { id: "workflows", label: "GitHub Actions Workflows (.yml)", icon: FileCode2 },
-            { id: "secrets", label: "Secrets & Environment Config", icon: Key },
-            { id: "webhook", label: "Git Push & Webhooks", icon: Radio },
-            { id: "targets", label: "Deployment Targets", icon: Server },
-          ] as const).map((tab) => {
+        <div
+          style={{
+            display: "flex",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+            padding: "0 16px",
+            overflowX: "auto",
+          }}
+        >
+          {(
+            [
+              { id: "pipeline", label: "Pipeline Visualizer & Runner", icon: Workflow },
+              { id: "workflows", label: "GitHub Actions Workflows (.yml)", icon: FileCode2 },
+              { id: "secrets", label: "Secrets & Environment Config", icon: Key },
+              { id: "webhook", label: "Git Push & Webhooks", icon: Radio },
+              { id: "targets", label: "Deployment Targets", icon: Server },
+            ] as const
+          ).map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.id;
             return (
@@ -291,7 +304,13 @@ export function CiCdPipelineModal({
                 <select
                   value={selectedBranch}
                   onChange={(e) => setSelectedBranch(e.target.value)}
-                  style={{ padding: "8px 12px", borderRadius: 8, background: "#111827", color: "#fff", border: "1px solid #374151" }}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: 8,
+                    background: "#111827",
+                    color: "#fff",
+                    border: "1px solid #374151",
+                  }}
                 >
                   <option value="main">main</option>
                   <option value="staging">staging</option>
@@ -328,14 +347,21 @@ export function CiCdPipelineModal({
                       padding: 12,
                       borderRadius: 8,
                       border: "1px solid rgba(255,255,255,0.08)",
-                      background: idx === currentStepIndex ? "rgba(0,229,245,0.08)" : "rgba(255,255,255,0.02)",
+                      background:
+                        idx === currentStepIndex
+                          ? "rgba(0,229,245,0.08)"
+                          : "rgba(255,255,255,0.02)",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", color: "#fff" }}>
+                    <div
+                      style={{ display: "flex", justifyContent: "space-between", color: "#fff" }}
+                    >
                       <strong>{step.name}</strong>
                       <span style={{ color: "#94a3b8", fontSize: "0.8rem" }}>{step.duration}</span>
                     </div>
-                    <div style={{ color: "#64748b", fontSize: "0.78rem", marginTop: 4 }}>{step.command}</div>
+                    <div style={{ color: "#64748b", fontSize: "0.78rem", marginTop: 4 }}>
+                      {step.command}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -390,7 +416,13 @@ export function CiCdPipelineModal({
                 if (!wf) return null;
                 return (
                   <>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                      }}
+                    >
                       <div>
                         <div style={{ color: "#fff", fontWeight: 700 }}>{wf.path}</div>
                         <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>{wf.desc}</div>
@@ -437,7 +469,9 @@ export function CiCdPipelineModal({
 
           {activeTab === "secrets" && (
             <div style={{ color: "#94a3b8", fontSize: "0.9rem", lineHeight: 1.6 }}>
-              <p>Configure repository secrets in GitHub → Settings → Secrets and variables → Actions.</p>
+              <p>
+                Configure repository secrets in GitHub → Settings → Secrets and variables → Actions.
+              </p>
               <ul>
                 <li>VITE_SUPABASE_URL</li>
                 <li>VITE_SUPABASE_ANON_KEY / VITE_SUPABASE_PUBLISHABLE_KEY</li>
@@ -449,7 +483,10 @@ export function CiCdPipelineModal({
 
           {activeTab === "webhook" && (
             <div style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
-              <p>Git push to <code style={{ color: "var(--cyan)" }}>main</code> triggers CI and deployment workflows.</p>
+              <p>
+                Git push to <code style={{ color: "var(--cyan)" }}>main</code> triggers CI and
+                deployment workflows.
+              </p>
               <a href={REPO_URL} target="_blank" rel="noreferrer" style={{ color: "var(--cyan)" }}>
                 Open repository <ExternalLink size={14} />
               </a>

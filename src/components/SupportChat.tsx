@@ -29,7 +29,7 @@ const KNOWLEDGE_BASE = {
   plans: `Our current plans are: ${PLAN_SUMMARY}`,
   account:
     "To create an account, select Open Account and register with your name, email, and password. Existing clients can use Client Login. Account authentication is handled through the platform's existing Supabase authentication flow; the support desk does not ask for or store your password.",
-  deposits: `Deposits are handled through the wallet settlement flow in the authenticated client area. Supported networks include BTC, ETH / ERC-20, and USDT TRC-20. Always verify the displayed network and destination address before sending digital assets. The configured settlement wallets are BTC ${WALLETS.BTC.slice(0, 10)}…, ETH ${WALLETS.ETH.slice(0, 10)}…, and USDT TRC-20 ${WALLETS["USDT-TRC20"].slice(0, 10)}….`,
+  deposits: `Deposits are handled through the wallet settlement flow in the authenticated client area. Supported networks include BTC, ETH / ERC-20, and USDT TRC-20. Always verify the displayed network and destination address before sending digital assets. The configured settlement wallets are BTC ${WALLETS["BTC"].slice(0, 10)}…, ETH ${WALLETS["ETH"].slice(0, 10)}…, and USDT TRC-20 ${WALLETS["USDT-TRC20"].slice(0, 10)}….`,
   withdrawals:
     "Withdrawal requests are handled from the authenticated client area and are subject to the platform's verification and settlement process. Never send a password, authentication code, or private key to support.",
   referrals:
@@ -52,13 +52,25 @@ function formatTime(timestamp: number): string {
 function generateAiResponse(input: string): { content: string; needsHuman: boolean } {
   const q = input.toLowerCase();
 
-  if (/essential|balanced|advanced|premier|plan|investment|invest|yield|return|minimum|how much/.test(q)) {
+  if (
+    /essential|balanced|advanced|premier|plan|investment|invest|yield|return|minimum|how much/.test(
+      q,
+    )
+  ) {
     return { content: KNOWLEDGE_BASE.plans, needsHuman: false };
   }
-  if (/login|log in|sign in|signup|sign up|register|account|password|authentication|verify email|verification/.test(q)) {
+  if (
+    /login|log in|sign in|signup|sign up|register|account|password|authentication|verify email|verification/.test(
+      q,
+    )
+  ) {
     return { content: KNOWLEDGE_BASE.account, needsHuman: false };
   }
-  if (/deposit|fund|send crypto|add funds|wallet address|btc|bitcoin|eth|ethereum|usdt|trc-20|erc-20|network/.test(q)) {
+  if (
+    /deposit|fund|send crypto|add funds|wallet address|btc|bitcoin|eth|ethereum|usdt|trc-20|erc-20|network/.test(
+      q,
+    )
+  ) {
     return { content: KNOWLEDGE_BASE.deposits, needsHuman: false };
   }
   if (/withdraw|cash out|payout|withdrawal|receive funds/.test(q)) {
@@ -67,7 +79,9 @@ function generateAiResponse(input: string): { content: string; needsHuman: boole
   if (/referral|refer|affiliate|invite|commission|bonus|ref code/.test(q)) {
     return { content: KNOWLEDGE_BASE.referrals, needsHuman: false };
   }
-  if (/support|help|platform|website|dashboard|portfolio|how does this work|what do you do/.test(q)) {
+  if (
+    /support|help|platform|website|dashboard|portfolio|how does this work|what do you do/.test(q)
+  ) {
     return { content: KNOWLEDGE_BASE.general, needsHuman: false };
   }
 
@@ -153,7 +167,9 @@ export function SupportChat() {
       )
       .join("\n\n");
     const firstUserMessage =
-      conversation.find((message) => message.role === "user")?.content || reason || "Support inquiry";
+      conversation.find((message) => message.role === "user")?.content ||
+      reason ||
+      "Support inquiry";
 
     try {
       const { data, error } = await supabase.functions.invoke("support-escalation", {
@@ -174,7 +190,9 @@ export function SupportChat() {
       return String(data.ticket_id);
     } catch (error: unknown) {
       console.error("Support ticket creation failed:", error);
-      setTicketError("We could not submit the support ticket right now. Please try again in a moment.");
+      setTicketError(
+        "We could not submit the support ticket right now. Please try again in a moment.",
+      );
       return null;
     } finally {
       setIsSubmittingTicket(false);
@@ -216,7 +234,10 @@ export function SupportChat() {
         setMessages(fullConversation);
         setIsTyping(false);
 
-        if (!ticketCreatedForSession && (response.needsHuman || conversationWithUser.length === 2)) {
+        if (
+          !ticketCreatedForSession &&
+          (response.needsHuman || conversationWithUser.length === 2)
+        ) {
           const created = await createSupportTicket(fullConversation, text);
           if (created) {
             setMessages((current) => [
@@ -313,16 +334,37 @@ export function SupportChat() {
           >
             <div>
               <div style={{ fontWeight: 700 }}>Aetheris Capital Support</div>
-              <div style={{ fontSize: 11, color: "#9CA3AF" }}>Support Desk · Mon–Fri 09:00–18:00 UTC</div>
+              <div style={{ fontSize: 11, color: "#9CA3AF" }}>
+                Support Desk · Mon–Fri 09:00–18:00 UTC
+              </div>
             </div>
-            <button type="button" onClick={handleClose} aria-label="Close support chat" style={{ background: "none", border: 0, color: "#9CA3AF", fontSize: 24, cursor: "pointer" }}>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label="Close support chat"
+              style={{
+                background: "none",
+                border: 0,
+                color: "#9CA3AF",
+                fontSize: 24,
+                cursor: "pointer",
+              }}
+            >
               ×
             </button>
           </header>
 
           <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: 16 }}>
             {!emailConfirmed && (
-              <form onSubmit={confirmEmail} style={{ marginBottom: 14, padding: 14, border: "1px solid rgba(212,175,55,.3)", borderRadius: 12 }}>
+              <form
+                onSubmit={confirmEmail}
+                style={{
+                  marginBottom: 14,
+                  padding: 14,
+                  border: "1px solid rgba(212,175,55,.3)",
+                  borderRadius: 12,
+                }}
+              >
                 <p style={{ margin: "0 0 10px", fontSize: 12 }}>
                   <strong>Please provide your email address so we can assist you better.</strong>
                 </p>
@@ -332,10 +374,32 @@ export function SupportChat() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
-                  style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8, border: "1px solid #374151", background: "#0A0A0F", color: "#fff" }}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    padding: 11,
+                    borderRadius: 8,
+                    border: "1px solid #374151",
+                    background: "#0A0A0F",
+                    color: "#fff",
+                  }}
                 />
-                {emailError && <div style={{ marginTop: 7, color: "#FCA5A5", fontSize: 11 }}>{emailError}</div>}
-                <button type="submit" style={{ marginTop: 8, width: "100%", padding: 10, borderRadius: 8, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800 }}>
+                {emailError && (
+                  <div style={{ marginTop: 7, color: "#FCA5A5", fontSize: 11 }}>{emailError}</div>
+                )}
+                <button
+                  type="submit"
+                  style={{
+                    marginTop: 8,
+                    width: "100%",
+                    padding: 10,
+                    borderRadius: 8,
+                    border: "1px solid #D4AF37",
+                    background: "#D4AF37",
+                    color: "#0A0A0F",
+                    fontWeight: 800,
+                  }}
+                >
                   Continue to Support
                 </button>
               </form>
@@ -357,13 +421,29 @@ export function SupportChat() {
                 }}
               >
                 {message.content}
-                <span style={{ display: "block", marginTop: 5, fontSize: 9, opacity: 0.58 }}>{formatTime(message.createdAt)}</span>
+                <span style={{ display: "block", marginTop: 5, fontSize: 9, opacity: 0.58 }}>
+                  {formatTime(message.createdAt)}
+                </span>
               </div>
             ))}
 
-            {isTyping && <div style={{ fontSize: 13, color: "#D4AF37", fontStyle: "italic" }}>Aetheris Support is typing…</div>}
+            {isTyping && (
+              <div style={{ fontSize: 13, color: "#D4AF37", fontStyle: "italic" }}>
+                Aetheris Support is typing…
+              </div>
+            )}
             {ticketId && (
-              <div style={{ margin: "8px 0", padding: 10, borderRadius: 8, background: "rgba(16,185,129,.08)", border: "1px solid rgba(16,185,129,.3)", color: "#A7F3D0", fontSize: 11 }}>
+              <div
+                style={{
+                  margin: "8px 0",
+                  padding: 10,
+                  borderRadius: 8,
+                  background: "rgba(16,185,129,.08)",
+                  border: "1px solid rgba(16,185,129,.3)",
+                  color: "#A7F3D0",
+                  fontSize: 11,
+                }}
+              >
                 Ticket <strong>#{ticketId}</strong> is open.
               </div>
             )}
@@ -379,7 +459,16 @@ export function SupportChat() {
                     type="button"
                     onClick={() => void handleSend(reply)}
                     disabled={isTyping || isSubmittingTicket}
-                    style={{ flex: "0 0 auto", padding: "7px 9px", borderRadius: 999, border: "1px solid rgba(212,175,55,.35)", background: "#111827", color: "#E5E7EB", fontSize: 10, cursor: "pointer" }}
+                    style={{
+                      flex: "0 0 auto",
+                      padding: "7px 9px",
+                      borderRadius: 999,
+                      border: "1px solid rgba(212,175,55,.35)",
+                      background: "#111827",
+                      color: "#E5E7EB",
+                      fontSize: 10,
+                      cursor: "pointer",
+                    }}
                   >
                     {reply}
                   </button>
@@ -392,9 +481,20 @@ export function SupportChat() {
                     type="button"
                     onClick={() => void handleHumanEscalation()}
                     disabled={isSubmittingTicket}
-                    style={{ width: "100%", padding: 9, borderRadius: 8, border: "1px solid rgba(212,175,55,.55)", background: "transparent", color: "#D4AF37", fontWeight: 700, fontSize: 11 }}
+                    style={{
+                      width: "100%",
+                      padding: 9,
+                      borderRadius: 8,
+                      border: "1px solid rgba(212,175,55,.55)",
+                      background: "transparent",
+                      color: "#D4AF37",
+                      fontWeight: 700,
+                      fontSize: 11,
+                    }}
                   >
-                    {isSubmittingTicket ? "Submitting support ticket…" : "Connect me with Human Support"}
+                    {isSubmittingTicket
+                      ? "Submitting support ticket…"
+                      : "Connect me with Human Support"}
                   </button>
                 </div>
               )}
@@ -404,15 +504,40 @@ export function SupportChat() {
                   e.preventDefault();
                   void handleSend();
                 }}
-                style={{ display: "flex", gap: 8, padding: 11, borderTop: "1px solid rgba(255,255,255,.08)", background: "#111827" }}
+                style={{
+                  display: "flex",
+                  gap: 8,
+                  padding: 11,
+                  borderTop: "1px solid rgba(255,255,255,.08)",
+                  background: "#111827",
+                }}
               >
                 <input
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your question…"
-                  style={{ minWidth: 0, flex: 1, padding: "11px 12px", borderRadius: 9, border: "1px solid #374151", background: "#0A0A0F", color: "#fff" }}
+                  style={{
+                    minWidth: 0,
+                    flex: 1,
+                    padding: "11px 12px",
+                    borderRadius: 9,
+                    border: "1px solid #374151",
+                    background: "#0A0A0F",
+                    color: "#fff",
+                  }}
                 />
-                <button type="submit" disabled={isTyping || isSubmittingTicket || !input.trim()} style={{ padding: "0 15px", borderRadius: 9, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800 }}>
+                <button
+                  type="submit"
+                  disabled={isTyping || isSubmittingTicket || !input.trim()}
+                  style={{
+                    padding: "0 15px",
+                    borderRadius: 9,
+                    border: "1px solid #D4AF37",
+                    background: "#D4AF37",
+                    color: "#0A0A0F",
+                    fontWeight: 800,
+                  }}
+                >
                   Send
                 </button>
               </form>

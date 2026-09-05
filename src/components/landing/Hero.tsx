@@ -33,10 +33,9 @@ export function Hero() {
             </h1>
 
             <p className="mt-5 max-w-xl text-[1.02rem] leading-relaxed text-muted-foreground">
-              Aetheris Capital provides structured digital-asset investment
-              mandates with defined terms, transparent positioning and
-              professional custody infrastructure. Start from $50 — or deploy
-              institutional-size capital.
+              Aetheris Capital provides structured digital-asset investment mandates with defined
+              terms, transparent positioning and professional custody infrastructure. Start from $50
+              — or deploy institutional-size capital.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -56,10 +55,7 @@ export function Hero() {
 
             <ul className="mt-8 grid gap-2.5 sm:grid-cols-3">
               {POINTS.map((p) => (
-                <li
-                  key={p}
-                  className="flex items-start gap-2 text-sm text-muted-foreground"
-                >
+                <li key={p} className="flex items-start gap-2 text-sm text-muted-foreground">
                   <Check className="mt-0.5 size-4 shrink-0 text-gold" />
                   {p}
                 </li>
@@ -83,9 +79,8 @@ export function Hero() {
               ))}
             </div>
             <p className="mt-6 text-xs leading-relaxed text-muted-foreground">
-              Figures are indicative of desk activity and are updated daily.
-              Capital at risk; past performance is not indicative of future
-              results.
+              Figures are indicative of desk activity and are updated daily. Capital at risk; past
+              performance is not indicative of future results.
             </p>
           </div>
         </div>

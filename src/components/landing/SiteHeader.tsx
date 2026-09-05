@@ -185,9 +185,7 @@ export function SiteHeader() {
             <nav className="flex-1 overflow-y-auto px-5 pb-6">
               {DRAWER_GROUPS.map((group) => (
                 <div key={group.title} className="pt-5">
-                  <p className="eyebrow pb-2 text-muted-foreground">
-                    {group.title}
-                  </p>
+                  <p className="eyebrow pb-2 text-muted-foreground">{group.title}</p>
                   <div className="grid gap-1">
                     {group.items.map((item) => (
                       <a

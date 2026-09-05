@@ -35,7 +35,9 @@ export function getInvestmentProgress(investment: Investment | null) {
   const total = Math.max(1, Number(investment?.term_days || 1));
   if (!investment?.start_date) return { day: 0, total, percent: 0, remaining: total };
   const start = new Date(investment.start_date).getTime();
-  const end = new Date(investment.end_date || investment.maturity_date || start + total * 86400000).getTime();
+  const end = new Date(
+    investment.end_date || investment.maturity_date || start + total * 86400000,
+  ).getTime();
   const now = Date.now();
   const elapsed = Math.max(0, Math.floor((now - start) / 86400000) + 1);
   const day = Math.min(total, elapsed);

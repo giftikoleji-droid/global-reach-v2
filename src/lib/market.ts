@@ -68,8 +68,22 @@ export const MARKET_FALLBACK: MarketRow[] = [
   { id: "solana", symbol: "SOL", name: "Solana", price: 168.4, priceEur: 155.4, change: 3.11 },
   { id: "cardano", symbol: "ADA", name: "Cardano", price: 0.61, priceEur: 0.563, change: -1.42 },
   { id: "polkadot", symbol: "DOT", name: "Polkadot", price: 7.24, priceEur: 6.68, change: 0.86 },
-  { id: "chainlink", symbol: "LINK", name: "Chainlink", price: 17.85, priceEur: 16.47, change: 2.04 },
-  { id: "avalanche-2", symbol: "AVAX", name: "Avalanche", price: 36.2, priceEur: 33.41, change: -2.18 },
+  {
+    id: "chainlink",
+    symbol: "LINK",
+    name: "Chainlink",
+    price: 17.85,
+    priceEur: 16.47,
+    change: 2.04,
+  },
+  {
+    id: "avalanche-2",
+    symbol: "AVAX",
+    name: "Avalanche",
+    price: 36.2,
+    priceEur: 33.41,
+    change: -2.18,
+  },
   { id: "ripple", symbol: "XRP", name: "XRP", price: 0.58, priceEur: 0.535, change: 0.44 },
   { id: "litecoin", symbol: "LTC", name: "Litecoin", price: 84.6, priceEur: 78.07, change: -0.61 },
   { id: "uniswap", symbol: "UNI", name: "Uniswap", price: 9.42, priceEur: 8.69, change: 1.27 },
@@ -77,12 +91,33 @@ export const MARKET_FALLBACK: MarketRow[] = [
 ];
 
 export const NEWS_FALLBACK: NewsRow[] = [
-  { title: "Euro area money market funds hold steady as central banks signal patience on rate path", source: "Global Financial Times" },
-  { title: "Digital asset custody frameworks advance under comprehensive institutional governance standards", source: "Reuters Institutional" },
-  { title: "Institutional allocators increase scrutiny of counterparty and settlement risk", source: "Bloomberg Asset" },
-  { title: "Funding rate spreads narrow across major perpetual futures venues", source: "Financial Desk" },
-  { title: "Liquid staking participation continues to expand across major global institutional networks", source: "DeFi Review" },
-  { title: "Premier financial hubs advance institutional digital fund administration and asset servicing", source: "Global Markets Review" },
+  {
+    title: "Euro area money market funds hold steady as central banks signal patience on rate path",
+    source: "Global Financial Times",
+  },
+  {
+    title:
+      "Digital asset custody frameworks advance under comprehensive institutional governance standards",
+    source: "Reuters Institutional",
+  },
+  {
+    title: "Institutional allocators increase scrutiny of counterparty and settlement risk",
+    source: "Bloomberg Asset",
+  },
+  {
+    title: "Funding rate spreads narrow across major perpetual futures venues",
+    source: "Financial Desk",
+  },
+  {
+    title:
+      "Liquid staking participation continues to expand across major global institutional networks",
+    source: "DeFi Review",
+  },
+  {
+    title:
+      "Premier financial hubs advance institutional digital fund administration and asset servicing",
+    source: "Global Markets Review",
+  },
 ];
 
 let cachedMarkets: { markets: MarketRow[]; at: number } | null = null;
@@ -100,17 +135,17 @@ export async function fetchMarkets(): Promise<MarketRow[]> {
       "?vs_currency=eur" +
       `&ids=${MARKET_IDS.join(",")}` +
       "&order=market_cap_desc&per_page=50&page=1&sparkline=false&price_change_percentage=24h";
-    
+
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
     if (!res.ok) throw new Error("CoinGecko status " + res.status);
-    
+
     const raw = (await res.json()) as Array<{
       id: string;
       current_price: number;
       price_change_percentage_24h: number | null;
     }>;
-    
+
     if (Array.isArray(raw) && raw.length > 0) {
       const eurUsd = 1.084;
       const markets: MarketRow[] = raw
@@ -143,11 +178,11 @@ export async function fetchNews(): Promise<NewsRow[]> {
     const timer = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(
       "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&feeds=cointelegraph,coindesk,decrypt",
-      { signal: controller.signal }
+      { signal: controller.signal },
     );
     clearTimeout(timer);
     if (!res.ok) throw new Error("CryptoCompare status " + res.status);
-    
+
     const data = (await res.json()) as {
       Data?: Array<{ title: string; url: string; source_info?: { name?: string } }>;
     };

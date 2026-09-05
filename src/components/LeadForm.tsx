@@ -104,7 +104,7 @@ export function LeadForm({ onLeadSubmitted }: { onLeadSubmitted?: () => void }) 
       <div className="form-grid">
         <div>
           <label htmlFor="lead-name">Full Name</label>
-          <input id="lead-name" name="fullName" required placeholder="e.g. Fiona O&apos;Connor" />
+          <input id="lead-name" name="fullName" required placeholder="e.g. Fiona O'Connor" />
         </div>
         <div>
           <label htmlFor="lead-email">Institutional Email</label>

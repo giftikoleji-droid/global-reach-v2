@@ -40,7 +40,15 @@ export function MarketGrid({
               </div>
               <div className="market-price">
                 ${m.price.toLocaleString(LOCALE, { maximumFractionDigits: m.price < 10 ? 4 : 2 })}
-                <span style={{ display: "block", color: "var(--muted)", fontSize: ".68rem", fontWeight: 500, marginTop: "2px" }}>
+                <span
+                  style={{
+                    display: "block",
+                    color: "var(--muted)",
+                    fontSize: ".68rem",
+                    fontWeight: 500,
+                    marginTop: "2px",
+                  }}
+                >
                   {formatEur(m.priceEur, m.priceEur < 10 ? 4 : 2)}
                 </span>
               </div>

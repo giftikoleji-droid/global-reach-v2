@@ -13,8 +13,7 @@ export const Route = createFileRoute("/$")({
       { property: "og:title", content: "Aetheris Capital — Client Portal" },
       {
         property: "og:description",
-        content:
-          "Sign in to manage your Aetheris Capital mandates, wallets and referrals.",
+        content: "Sign in to manage your Aetheris Capital mandates, wallets and referrals.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

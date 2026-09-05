@@ -23,7 +23,13 @@ function routeForPath(path: string): DashboardRoute {
   return "dashboard";
 }
 
-export function DashboardProvider({ children, initialRoute = "dashboard" }: { children: ReactNode; initialRoute?: DashboardRoute }) {
+export function DashboardProvider({
+  children,
+  initialRoute = "dashboard",
+}: {
+  children: ReactNode;
+  initialRoute?: DashboardRoute;
+}) {
   const [route, setRoute] = useState<DashboardRoute>(initialRoute);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -40,7 +46,10 @@ export function DashboardProvider({ children, initialRoute = "dashboard" }: { ch
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const value = useMemo(() => ({ route, navigate, mobileOpen, setMobileOpen }), [route, mobileOpen]);
+  const value = useMemo(
+    () => ({ route, navigate, mobileOpen, setMobileOpen }),
+    [route, mobileOpen],
+  );
   return <DashboardContext.Provider value={value}>{children}</DashboardContext.Provider>;
 }
 
