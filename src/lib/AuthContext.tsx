@@ -78,8 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchProfile(data.user.id);
       }
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "An unexpected error occurred" };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
   }
 
@@ -104,8 +104,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await fetchProfile(data.user.id);
       }
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err.message || "An unexpected error occurred" };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : "An unexpected error occurred" };
     }
   }
 
