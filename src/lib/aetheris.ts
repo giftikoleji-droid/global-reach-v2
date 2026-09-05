@@ -140,7 +140,14 @@ export function resolvePlan(idOrName?: string | null): Plan {
   return DEFAULT_PLAN;
 }
 
-export const WALLET_PROOFS = {
+export type WalletProof = {
+  address: string;
+  signature: string;
+  signedMessage: string;
+  verificationLink?: string;
+};
+
+export const WALLET_PROOFS: Record<"BTC" | "ETH" | "USDT-TRC20", WalletProof> = {
   BTC: {
     address: "bc1q3z6xhcwagwth320x6hh7g3e042gzud6uh0jcss",
     signature:
@@ -160,7 +167,7 @@ export const WALLET_PROOFS = {
       "0xba9d356ed1e3b6989c904e4c52710d7543b78bb070908c793d097bb2d9060dd90154b3f3219026b96d0904e317618359c0ba39abb9b574e5ee0dedf3b335becc1b",
     signedMessage: "Aetheris Capital Ltd – Official USDT TRC-20 deposit wallet – 2026",
   },
-} as const;
+};
 
 export type WalletNetwork = keyof typeof WALLET_PROOFS;
 
@@ -637,7 +644,7 @@ export const db = {
                 d.maturity_date ||
                 new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
             ),
-            created_at: d.created_at ? String(d.created_at) : undefined,
+            ...(d.created_at ? { created_at: String(d.created_at) } : {}),
           } satisfies Investment;
         });
       }
@@ -684,7 +691,7 @@ export const db = {
                 d.maturity_date ||
                 new Date(Date.now() + Number(d.term_days || plan.termDays) * 86400000).toISOString(),
             ),
-            created_at: d.created_at ? String(d.created_at) : undefined,
+            ...(d.created_at ? { created_at: String(d.created_at) } : {}),
           } satisfies Investment;
         });
       }
@@ -735,8 +742,8 @@ export const db = {
       start_date: startDate,
       end_date: endDate,
       status: inv.status || "active",
-      tx_hash: inv.tx_hash,
-      wallet_address: inv.wallet_address,
+      ...(inv.tx_hash !== undefined ? { tx_hash: inv.tx_hash } : {}),
+      ...(inv.wallet_address !== undefined ? { wallet_address: inv.wallet_address } : {}),
     });
 
     try {
@@ -786,6 +793,15 @@ export const db = {
         error: err instanceof Error ? err.message : "Payout failed",
       };
     }
+  },
+
+  async getBalance(userId: string): Promise<number> {
+    // Prefer local cache; Supabase balance table may not exist yet
+    return localStore.getBalance(userId);
+  },
+
+  async getTransactions(userId: string): Promise<Transaction[]> {
+    return localStore.getTransactions(userId);
   },
 
   async addLead(lead: {

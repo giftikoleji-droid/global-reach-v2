@@ -22,3 +22,16 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Quality checks
+
+```sh
+npm run check:ci   # lint + TypeScript + production build
+npm test           # unit tests (aetheris helpers)
+```
+
+## Toolchain notes
+
+- **Lockfile:** this repo uses `bun.lock`. Do not commit `package-lock.json`.
+- **rolldown override:** `package.json` pins `rolldown` to `1.2.1` via `overrides` to keep Vite’s native bundler on a known-good release and avoid peer/`@emnapi` resolution churn in CI and local installs.
+- **Route tree:** `src/routeTree.gen.ts` is generated from `src/routes/`. Regenerate with the TanStack router generator after adding or renaming routes.
