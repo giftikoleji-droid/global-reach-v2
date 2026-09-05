@@ -1,8 +1,6 @@
-import { useState } from "react";
-import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { InvestmentsPage } from "../dashboard/pages/InvestmentsPage";
-import { DashboardProvider } from "../dashboard/context/DashboardContext";
-import { PlanModal } from "../components/PlanModal";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { DashboardHome } from "../dashboard/components/DashboardHome";
+import { useClientPortfolio } from "../dashboard/hooks/useClientPortfolio";
 import { useAuth } from "../lib/AuthContext";
 import { supabase } from "../lib/supabase";
 
@@ -15,31 +13,41 @@ export const Route = createFileRoute("/portfolio")({
 });
 
 function PortfolioRoute() {
-  const router = useRouter();
   const { session, profile, loading } = useAuth();
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const portfolio = useClientPortfolio(session?.user?.id || profile?.id);
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">Loading portfolio…</div>;
+  if (loading || portfolio.loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">Loading portfolio…</div>;
+  }
   if (!session) return null;
+  if (portfolio.error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">
+        <div className="dashboard-error">
+          <strong>We couldn't load your portfolio.</strong>
+          <p>Please try again. Your authentication and account remain unchanged.</p>
+          <button type="button" className="dashboard-button secondary" onClick={() => void portfolio.refresh()}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <DashboardProvider initialRoute="investments">
-        <InvestmentsPage
-          activeInvestment={null}
-          onChoosePlan={(planId) => setSelectedPlanId(planId)}
-          onBack={() => void router.navigate({ to: "/dashboard" })}
-        />
-      </DashboardProvider>
-      {selectedPlanId && (
-        <PlanModal
-          planId={selectedPlanId}
-          user={profile}
-          onClose={() => setSelectedPlanId(null)}
-          onCreated={() => { setSelectedPlanId(null); void router.invalidate(); }}
-          onRequireAuth={() => { setSelectedPlanId(null); void router.navigate({ to: "/login" }); }}
-        />
-      )}
-    </>
+    <div className="aetheris-dashboard">
+      <main className="dashboard-main">
+        <div className="dashboard-container">
+          <DashboardHome
+            profile={profile}
+            activeInvestment={portfolio.activeInvestment}
+            availableBalance={portfolio.balance.available_balance}
+            transactions={portfolio.transactions}
+            onExplore={() => portfolio.navigateTo("investments")}
+            onViewInvestments={() => portfolio.navigateTo("investments")}
+          />
+        </div>
+      </main>
+    </div>
   );
 }
