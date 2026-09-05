@@ -29,8 +29,7 @@ const KNOWLEDGE_BASE = {
   plans: `Our current plans are: ${PLAN_SUMMARY}`,
   account:
     "To create an account, select Open Account and register with your name, email, and password. Existing clients can use Client Login. Account authentication is handled through the platform's existing Supabase authentication flow; the support desk does not ask for or store your password.",
-  deposits:
-    `Deposits are handled through the wallet settlement flow in the authenticated client area. Supported networks include BTC, ETH / ERC-20, and USDT TRC-20. Always verify the displayed network and destination address before sending digital assets. The configured settlement wallets are BTC ${WALLETS.BTC.slice(0, 10)}…, ETH ${WALLETS.ETH.slice(0, 10)}…, and USDT TRC-20 ${WALLETS["USDT-TRC20"].slice(0, 10)}….`,
+  deposits: `Deposits are handled through the wallet settlement flow in the authenticated client area. Supported networks include BTC, ETH / ERC-20, and USDT TRC-20. Always verify the displayed network and destination address before sending digital assets. The configured settlement wallets are BTC ${WALLETS.BTC.slice(0, 10)}…, ETH ${WALLETS.ETH.slice(0, 10)}…, and USDT TRC-20 ${WALLETS["USDT-TRC20"].slice(0, 10)}….`,
   withdrawals:
     "Withdrawal requests are handled from the authenticated client area and are subject to the platform's verification and settlement process. Never send a password, authentication code, or private key to support.",
   referrals:
@@ -148,9 +147,13 @@ export function SupportChat() {
     setTicketError("");
 
     const transcript = conversation
-      .map((message) => `${message.role === "user" ? "CLIENT" : "AETHERIS SUPPORT"} [${formatTime(message.createdAt)}]: ${message.content}`)
+      .map(
+        (message) =>
+          `${message.role === "user" ? "CLIENT" : "AETHERIS SUPPORT"} [${formatTime(message.createdAt)}]: ${message.content}`,
+      )
       .join("\n\n");
-    const firstUserMessage = conversation.find((message) => message.role === "user")?.content || reason || "Support inquiry";
+    const firstUserMessage =
+      conversation.find((message) => message.role === "user")?.content || reason || "Support inquiry";
 
     try {
       const { data, error } = await supabase.functions.invoke("support-escalation", {
@@ -169,7 +172,7 @@ export function SupportChat() {
       setTicketId(data.ticket_id);
       setTicketCreatedForSession(true);
       return String(data.ticket_id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Support ticket creation failed:", error);
       setTicketError("We could not submit the support ticket right now. Please try again in a moment.");
       return null;
@@ -199,37 +202,37 @@ export function SupportChat() {
     setInput("");
     setIsTyping(true);
 
-    window.setTimeout(async () => {
-      const response = generateAiResponse(text);
-      const assistantMessage: Message = {
-        id: `assistant_${Date.now()}`,
-        role: "assistant",
-        content: response.content,
-        createdAt: Date.now(),
-      };
-      const fullConversation = [...conversationWithUser, assistantMessage];
+    window.setTimeout(() => {
+      void (async () => {
+        const response = generateAiResponse(text);
+        const assistantMessage: Message = {
+          id: `assistant_${Date.now()}`,
+          role: "assistant",
+          content: response.content,
+          createdAt: Date.now(),
+        };
+        const fullConversation = [...conversationWithUser, assistantMessage];
 
-      setMessages(fullConversation);
-      setIsTyping(false);
+        setMessages(fullConversation);
+        setIsTyping(false);
 
-      // Create one support ticket for the first submitted inquiry in this chat.
-      // Human escalation can create the ticket instead when the visitor requests it.
-      if (!ticketCreatedForSession && (response.needsHuman || conversationWithUser.length === 2)) {
-        const created = await createSupportTicket(fullConversation, text);
-        if (created) {
-          setMessages((current) => [
-            ...current,
-            {
-              id: `ticket_${Date.now()}`,
-              role: "assistant",
-              content: `Thank you. Your support ticket (#${created}) has been created. A member of our team will respond to ${email.trim().toLowerCase()} within 24 hours.`,
-              createdAt: Date.now(),
-            },
-          ]);
+        if (!ticketCreatedForSession && (response.needsHuman || conversationWithUser.length === 2)) {
+          const created = await createSupportTicket(fullConversation, text);
+          if (created) {
+            setMessages((current) => [
+              ...current,
+              {
+                id: `ticket_${Date.now()}`,
+                role: "assistant",
+                content: `Thank you. Your support ticket (#${created}) has been created. A member of our team will respond to ${email.trim().toLowerCase()} within 24 hours.`,
+                createdAt: Date.now(),
+              },
+            ]);
+          }
         }
-      }
 
-      if (response.needsHuman) setShowEscalation(true);
+        if (response.needsHuman) setShowEscalation(true);
+      })();
     }, 550);
   }
 
@@ -256,116 +259,162 @@ export function SupportChat() {
 
   return (
     <>
-      <style>{`
-        .aetheris-support-fab{position:fixed;right:24px;bottom:24px;width:58px;height:58px;border-radius:50%;border:1px solid rgba(212,175,55,.7);background:#0A0A0F;color:#D4AF37;font-family:Georgia,serif;font-size:24px;font-weight:700;box-shadow:0 12px 36px rgba(0,0,0,.35),0 0 22px rgba(212,175,55,.12);cursor:pointer;z-index:1100}
-        .aetheris-support-panel{position:fixed;right:24px;bottom:94px;width:min(420px,calc(100vw - 32px));height:min(680px,calc(100vh - 120px));display:flex;flex-direction:column;overflow:hidden;background:#0A0A0F;border:1px solid rgba(212,175,55,.28);border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.55);z-index:1100;color:#F9FAFB;font-family:Inter,system-ui,sans-serif}
-        .aetheris-support-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;background:linear-gradient(135deg,#111827,#0A0A0F);border-bottom:1px solid rgba(212,175,55,.22)}
-        .aetheris-support-brand{display:flex;align-items:center;gap:11px}.aetheris-support-logo{width:38px;height:38px;display:grid;place-items:center;border:1px solid rgba(212,175,55,.65);border-radius:9px;color:#D4AF37;font-family:Georgia,serif;font-weight:700;font-size:19px}.aetheris-support-title{font-family:"Playfair Display",Georgia,serif;font-size:16px;font-weight:700}.aetheris-support-sub{font-size:11px;color:#9CA3AF;margin-top:2px}.aetheris-support-live{display:inline-block;width:7px;height:7px;border-radius:50%;background:#10B981;margin-right:5px;box-shadow:0 0 8px rgba(16,185,129,.7)}
-        .aetheris-support-close{width:32px;height:32px;border:0;background:transparent;color:#9CA3AF;font-size:24px;cursor:pointer}
-        .aetheris-support-body{flex:1;overflow-y:auto;padding:16px;background:radial-gradient(circle at top right,rgba(212,175,55,.07),transparent 38%),#0A0A0F}
-        .aetheris-support-msg{max-width:88%;padding:11px 13px;margin-bottom:10px;border-radius:12px;font-size:13px;line-height:1.55;white-space:pre-wrap}.aetheris-support-msg.from-ai{margin-right:auto;background:rgba(212,175,55,.94);color:#0A0A0F;border:1px solid #D4AF37;border-bottom-left-radius:4px}.aetheris-support-msg.from-user{margin-left:auto;background:#1a1a2e;color:#fff;border:1px solid rgba(255,255,255,.09);border-bottom-right-radius:4px}.aetheris-support-time{display:block;margin-top:5px;font-size:9px;opacity:.58}.aetheris-support-typing{font-style:italic}.aetheris-support-dots span{display:inline-block;animation:aetheris-dot 1.2s infinite;margin-left:2px}.aetheris-support-dots span:nth-child(2){animation-delay:.15s}.aetheris-support-dots span:nth-child(3){animation-delay:.3s}@keyframes aetheris-dot{0%,60%,100%{opacity:.25}30%{opacity:1}}
-        .aetheris-support-gate{margin:8px 0 14px;padding:14px;border:1px solid rgba(212,175,55,.3);background:#111827;border-radius:12px}.aetheris-support-gate p{margin:0 0 10px;font-size:12px;line-height:1.5;color:#E5E7EB}.aetheris-support-email{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:8px;border:1px solid #374151;background:#0A0A0F;color:#fff;outline:none}.aetheris-support-email:focus{border-color:#D4AF37}.aetheris-support-error{margin-top:7px;color:#FCA5A5;font-size:11px}.aetheris-support-submit{margin-top:8px;width:100%;padding:10px;border:1px solid #D4AF37;border-radius:8px;background:#D4AF37;color:#0A0A0F;font-weight:800;cursor:pointer}
-        .aetheris-support-quick{display:flex;gap:6px;overflow-x:auto;padding:9px 12px;border-top:1px solid rgba(255,255,255,.06)}.aetheris-support-quick button{flex:0 0 auto;padding:7px 9px;border:1px solid rgba(212,175,55,.35);border-radius:999px;background:#111827;color:#E5E7EB;font-size:10px;cursor:pointer}.aetheris-support-quick button:hover{border-color:#D4AF37;color:#D4AF37}
-        .aetheris-support-actions{padding:0 12px 9px}.aetheris-support-human{width:100%;padding:9px 10px;border:1px solid rgba(212,175,55,.55);border-radius:8px;background:transparent;color:#D4AF37;font-weight:700;font-size:11px;cursor:pointer}.aetheris-support-ticket{margin:8px 0;padding:9px 10px;border-radius:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);color:#A7F3D0;font-size:11px}.aetheris-support-composer{display:flex;gap:8px;padding:11px;border-top:1px solid rgba(255,255,255,.08);background:#111827}.aetheris-support-composer input{min-width:0;flex:1;padding:11px 12px;border-radius:9px;border:1px solid #374151;background:#0A0A0F;color:#fff;outline:none}.aetheris-support-composer input:focus{border-color:#D4AF37}.aetheris-support-composer button{padding:0 15px;border:1px solid #D4AF37;border-radius:9px;background:#D4AF37;color:#0A0A0F;font-weight:800;cursor:pointer}.aetheris-support-composer button:disabled{opacity:.45;cursor:not-allowed}
-        @media(max-width:700px){.aetheris-support-fab{right:16px;bottom:16px}.aetheris-support-panel{inset:0;width:100%;height:100%;max-height:none;border:0;border-radius:0}.aetheris-support-head{padding:14px 16px}.aetheris-support-close:before{content:"←";font-size:20px}.aetheris-support-close{font-size:0}.aetheris-support-body{padding:14px}.aetheris-support-msg{max-width:92%}.aetheris-support-composer{padding:9px}.aetheris-support-composer input{font-size:16px}.aetheris-support-quick{padding-bottom:8px}}
-      `}</style>
-
       <button
-        className="aetheris-support-fab"
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label="Open Aetheris Capital Support"
+        style={{
+          position: "fixed",
+          right: 24,
+          bottom: 24,
+          width: 58,
+          height: 58,
+          borderRadius: "50%",
+          border: "1px solid rgba(212,175,55,.7)",
+          background: "#0A0A0F",
+          color: "#D4AF37",
+          fontFamily: "Georgia,serif",
+          fontSize: 24,
+          fontWeight: 700,
+          cursor: "pointer",
+          zIndex: 1100,
+        }}
       >
         Æ
       </button>
 
       {open && (
-        <section className="aetheris-support-panel" aria-label="Aetheris Capital Support Chat">
-          <header className="aetheris-support-head">
-            <div className="aetheris-support-brand">
-              <div className="aetheris-support-logo">Æ</div>
-              <div>
-                <div className="aetheris-support-title">Aetheris Capital Support</div>
-                <div className="aetheris-support-sub"><span className="aetheris-support-live" /> Support Desk · Mon–Fri 09:00–18:00 UTC</div>
-              </div>
+        <section
+          aria-label="Aetheris Capital Support Chat"
+          style={{
+            position: "fixed",
+            right: 24,
+            bottom: 94,
+            width: "min(420px, calc(100vw - 32px))",
+            height: "min(680px, calc(100vh - 120px))",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            background: "#0A0A0F",
+            border: "1px solid rgba(212,175,55,.28)",
+            borderRadius: 16,
+            zIndex: 1100,
+            color: "#F9FAFB",
+          }}
+        >
+          <header
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "16px 18px",
+              borderBottom: "1px solid rgba(212,175,55,.22)",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700 }}>Aetheris Capital Support</div>
+              <div style={{ fontSize: 11, color: "#9CA3AF" }}>Support Desk · Mon–Fri 09:00–18:00 UTC</div>
             </div>
-            <button className="aetheris-support-close" type="button" onClick={handleClose} aria-label="Close support chat">×</button>
+            <button type="button" onClick={handleClose} aria-label="Close support chat" style={{ background: "none", border: 0, color: "#9CA3AF", fontSize: 24, cursor: "pointer" }}>
+              ×
+            </button>
           </header>
 
-          <div className="aetheris-support-body" ref={bodyRef}>
+          <div ref={bodyRef} style={{ flex: 1, overflowY: "auto", padding: 16 }}>
             {!emailConfirmed && (
-              <form className="aetheris-support-gate" onSubmit={confirmEmail}>
-                <p><strong>Please provide your email address so we can assist you better.</strong></p>
+              <form onSubmit={confirmEmail} style={{ marginBottom: 14, padding: 14, border: "1px solid rgba(212,175,55,.3)", borderRadius: 12 }}>
+                <p style={{ margin: "0 0 10px", fontSize: 12 }}>
+                  <strong>Please provide your email address so we can assist you better.</strong>
+                </p>
                 <input
-                  className="aetheris-support-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
-                  autoComplete="email"
                   required
+                  style={{ width: "100%", boxSizing: "border-box", padding: 11, borderRadius: 8, border: "1px solid #374151", background: "#0A0A0F", color: "#fff" }}
                 />
-                {emailError && <div className="aetheris-support-error">{emailError}</div>}
-                <button className="aetheris-support-submit" type="submit">Continue to Support</button>
+                {emailError && <div style={{ marginTop: 7, color: "#FCA5A5", fontSize: 11 }}>{emailError}</div>}
+                <button type="submit" style={{ marginTop: 8, width: "100%", padding: 10, borderRadius: 8, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800 }}>
+                  Continue to Support
+                </button>
               </form>
             )}
 
             {messages.map((message) => (
-              <div key={message.id} className={`aetheris-support-msg ${message.role === "user" ? "from-user" : "from-ai"}`}>
+              <div
+                key={message.id}
+                style={{
+                  maxWidth: "88%",
+                  padding: "11px 13px",
+                  marginBottom: 10,
+                  borderRadius: 12,
+                  fontSize: 13,
+                  lineHeight: 1.55,
+                  marginLeft: message.role === "user" ? "auto" : undefined,
+                  background: message.role === "user" ? "#1a1a2e" : "rgba(212,175,55,.94)",
+                  color: message.role === "user" ? "#fff" : "#0A0A0F",
+                }}
+              >
                 {message.content}
-                <span className="aetheris-support-time">{formatTime(message.createdAt)}</span>
+                <span style={{ display: "block", marginTop: 5, fontSize: 9, opacity: 0.58 }}>{formatTime(message.createdAt)}</span>
               </div>
             ))}
 
-            {isTyping && (
-              <div className="aetheris-support-msg from-ai aetheris-support-typing">
-                Aetheris Support is typing<span className="aetheris-support-dots"><span>.</span><span>.</span><span>.</span></span>
-              </div>
-            )}
-
+            {isTyping && <div style={{ fontSize: 13, color: "#D4AF37", fontStyle: "italic" }}>Aetheris Support is typing…</div>}
             {ticketId && (
-              <div className="aetheris-support-ticket">
-                Ticket <strong>#{ticketId}</strong> is open. Our support desk has received your inquiry.
+              <div style={{ margin: "8px 0", padding: 10, borderRadius: 8, background: "rgba(16,185,129,.08)", border: "1px solid rgba(16,185,129,.3)", color: "#A7F3D0", fontSize: 11 }}>
+                Ticket <strong>#{ticketId}</strong> is open.
               </div>
             )}
-
-            {ticketError && <div className="aetheris-support-error">{ticketError}</div>}
+            {ticketError && <div style={{ color: "#FCA5A5", fontSize: 11 }}>{ticketError}</div>}
           </div>
 
           {emailConfirmed && (
             <>
-              <div className="aetheris-support-quick" aria-label="Suggested questions">
+              <div style={{ display: "flex", gap: 6, overflowX: "auto", padding: "9px 12px" }}>
                 {quickReplies.map((reply) => (
-                  <button key={reply} type="button" onClick={() => handleSend(reply)} disabled={isTyping || isSubmittingTicket}>
+                  <button
+                    key={reply}
+                    type="button"
+                    onClick={() => void handleSend(reply)}
+                    disabled={isTyping || isSubmittingTicket}
+                    style={{ flex: "0 0 auto", padding: "7px 9px", borderRadius: 999, border: "1px solid rgba(212,175,55,.35)", background: "#111827", color: "#E5E7EB", fontSize: 10, cursor: "pointer" }}
+                  >
                     {reply}
                   </button>
                 ))}
               </div>
 
-              <div className="aetheris-support-actions">
-                {(showEscalation || !ticketCreatedForSession) && (
-                  <button className="aetheris-support-human" type="button" onClick={handleHumanEscalation} disabled={isSubmittingTicket}>
+              {(showEscalation || !ticketCreatedForSession) && (
+                <div style={{ padding: "0 12px 9px" }}>
+                  <button
+                    type="button"
+                    onClick={() => void handleHumanEscalation()}
+                    disabled={isSubmittingTicket}
+                    style={{ width: "100%", padding: 9, borderRadius: 8, border: "1px solid rgba(212,175,55,.55)", background: "transparent", color: "#D4AF37", fontWeight: 700, fontSize: 11 }}
+                  >
                     {isSubmittingTicket ? "Submitting support ticket…" : "Connect me with Human Support"}
                   </button>
-                )}
-              </div>
+                </div>
+              )}
 
               <form
-                className="aetheris-support-composer"
                 onSubmit={(e) => {
                   e.preventDefault();
                   void handleSend();
                 }}
+                style={{ display: "flex", gap: 8, padding: 11, borderTop: "1px solid rgba(255,255,255,.08)", background: "#111827" }}
               >
                 <input
-                  type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="How can we help?"
-                  aria-label="Support message"
-                  disabled={isTyping || isSubmittingTicket}
+                  placeholder="Type your question…"
+                  style={{ minWidth: 0, flex: 1, padding: "11px 12px", borderRadius: 9, border: "1px solid #374151", background: "#0A0A0F", color: "#fff" }}
                 />
-                <button type="submit" disabled={!input.trim() || isTyping || isSubmittingTicket}>Send</button>
+                <button type="submit" disabled={isTyping || isSubmittingTicket || !input.trim()} style={{ padding: "0 15px", borderRadius: 9, border: "1px solid #D4AF37", background: "#D4AF37", color: "#0A0A0F", fontWeight: 800 }}>
+                  Send
+                </button>
               </form>
             </>
           )}
