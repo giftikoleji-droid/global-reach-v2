@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { SiteHeader } from "@/components/landing/SiteHeader";
-import { MarketTicker } from "@/components/landing/MarketTicker";
-import { Hero } from "@/components/landing/Hero";
+import LegacyRoot from "@/legacy/LegacyRoot";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -25,17 +23,5 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: Index,
+  component: LegacyRoot,
 });
-
-function Index() {
-  return (
-    <main className="min-h-screen bg-background">
-      <SiteHeader />
-      <div className="-mt-6 pb-2 pt-6">
-        <MarketTicker />
-      </div>
-      <Hero />
-    </main>
-  );
-}

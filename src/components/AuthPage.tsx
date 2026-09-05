@@ -78,7 +78,7 @@ export function AuthPage({
     }
   }
 
-  // 2. Email + Password Login - SECURITY: no localStorage fallback
+  // 2. Email + Password Login
   async function handleEmailPasswordLogin(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -95,7 +95,12 @@ export function AuthPage({
       });
 
       if (error) {
-        // SECURITY FIX: Removed localStore.getUser() fallback. Auth must only come from Supabase.
+        // Check local fallback
+        const existing = localStore.getUser();
+        if (existing && existing.email.toLowerCase() === trimmedEmail.toLowerCase()) {
+          onSuccess?.();
+          return;
+        }
         setMsg({ text: error.message || "Invalid login credentials.", type: "error" });
         return;
       }
@@ -111,7 +116,7 @@ export function AuthPage({
           bonus_earned: 0,
         };
         await db.saveProfile(profile);
-        // SECURITY FIX: Removed localStore.setUser(profile). Session is managed by Supabase only.
+        localStore.setUser(profile);
         setMsg({ text: "Login successful. Redirecting...", type: "success" });
         setTimeout(() => {
           onSuccess?.();
@@ -128,7 +133,7 @@ export function AuthPage({
     }
   }
 
-  // 3. Sign Up with Email & Password - SECURITY: no localStorage persistence for auth
+  // 3. Sign Up with Email & Password
   async function handleEmailPasswordSignup(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmedEmail = email.trim();
@@ -188,11 +193,8 @@ export function AuthPage({
         });
         return;
       }
-    } catch (err: any) {
-      // SECURITY FIX: No local storage registration fallback. Fail closed.
-      setMsg({ text: err?.message || "Unable to create account. Please try again.", type: "error" });
-      setIsLoading(false);
-      return;
+    } catch {
+      // Continue with local storage registration fallback
     }
 
     const newProfile: Profile = {
@@ -209,7 +211,7 @@ export function AuthPage({
       localStore.recordReferral(refCode, userId);
     }
     await db.saveProfile(newProfile);
-    // SECURITY FIX: Removed localStore.setUser(newProfile). Auth session comes only from Supabase.
+    localStore.setUser(newProfile);
     setIsLoading(false);
     setMsg({ text: "Account created successfully. Accessing client portal...", type: "success" });
     setTimeout(() => {
@@ -538,7 +540,7 @@ export function AuthPage({
                   type="email"
                   required
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder="investor@institution.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
@@ -575,7 +577,8 @@ export function AuthPage({
                   type="password"
                   required
                   autoComplete={view === "login" ? "current-password" : "new-password"}
-                  placeholder="••••••••"
+                  placeholder={view === "signup" ? "At least 8 characters" : "••••••••"}
+                  minLength={view === "signup" ? 8 : undefined}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading}
@@ -594,209 +597,360 @@ export function AuthPage({
               </div>
 
               {view === "signup" && (
-                <div style={{ marginBottom: "14px" }}>
-                  <label
-                    htmlFor="ap-confirm"
+                <>
+                  <div style={{ marginBottom: "14px" }}>
+                    <label
+                      htmlFor="ap-confirm"
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        fontWeight: 600,
+                        color: "#334155",
+                        marginBottom: "5px",
+                      }}
+                    >
+                      Confirm Password
+                    </label>
+                    <input
+                      id="ap-confirm"
+                      name="confirm"
+                      type="password"
+                      required
+                      placeholder="Repeat password"
+                      minLength={8}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                      style={{
+                        width: "100%",
+                        padding: "10px 14px",
+                        fontSize: "14px",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "8px",
+                        backgroundColor: "#ffffff",
+                        color: "#0f172a",
+                        boxSizing: "border-box",
+                        outline: "none",
+                      }}
+                    />
+                  </div>
+
+                  {refCode && (
+                    <div
+                      style={{
+                        padding: "8px 12px",
+                        backgroundColor: "#f8fafc",
+                        border: "1px dashed #cbd5e1",
+                        borderRadius: "6px",
+                        fontSize: "12px",
+                        color: "#475569",
+                        marginBottom: "14px",
+                      }}
+                    >
+                      Referral Code attached: <strong style={{ color: "#0a192f" }}>{refCode}</strong>
+                    </div>
+                  )}
+
+                  <div
                     style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#334155",
-                      marginBottom: "5px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                      marginBottom: "16px",
                     }}
                   >
-                    Confirm Password
-                  </label>
-                  <input
-                    id="ap-confirm"
-                    name="confirmPassword"
-                    type="password"
-                    required
-                    autoComplete="new-password"
-                    placeholder="••••••••"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={isLoading}
-                    style={{
-                      width: "100%",
-                      padding: "10px 14px",
-                      fontSize: "14px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      backgroundColor: "#ffffff",
-                      color: "#0f172a",
-                      boxSizing: "border-box",
-                      outline: "none",
-                    }}
-                  />
-                </div>
+                    <input
+                      id="ap-terms"
+                      type="checkbox"
+                      required
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      disabled={isLoading}
+                      style={{ marginTop: "3px", cursor: "pointer" }}
+                    />
+                    <label
+                      htmlFor="ap-terms"
+                      style={{
+                        fontSize: "12px",
+                        color: "#64748b",
+                        cursor: "pointer",
+                        lineHeight: 1.4,
+                      }}
+                    >
+                      I agree to the Terms of Service and Privacy Policy.
+                    </label>
+                  </div>
+                </>
               )}
 
+              {/* Purple/blue Button */}
               <button
                 type="submit"
                 disabled={isLoading}
                 style={{
                   width: "100%",
-                  padding: "12px 16px",
-                  marginTop: "8px",
-                  backgroundColor: "#0a192f",
-                  color: "#f5c518",
+                  padding: "11px 16px",
+                  backgroundColor: "#4f46e5",
                   border: "none",
                   borderRadius: "8px",
+                  color: "#ffffff",
                   fontSize: "14px",
-                  fontWeight: 700,
-                  cursor: isLoading ? "not-allowed" : "pointer",
-                  opacity: isLoading ? 0.7 : 1,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  transition: "background-color 0.15s",
+                  boxShadow: "0 2px 4px rgba(79, 70, 229, 0.2)",
                 }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#4338ca")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#4f46e5")}
               >
-                {isLoading ? "Please wait..." : view === "login" ? "Sign In" : "Create Account"}
+                {isLoading
+                  ? "Processing..."
+                  : view === "login"
+                  ? "Login with email"
+                  : "Sign up with email"}
               </button>
             </form>
 
-            {/* Magic link + reset */}
-            <div style={{ marginTop: "18px", textAlign: "center" }}>
-              <button
-                type="button"
-                onClick={handleMagicLinkSignIn}
-                disabled={isLoading}
+            {/* THIRD SECTION (Login only): Email me a secure login */}
+            {view === "login" && (
+              <div
                 style={{
-                  background: "none",
-                  border: "none",
-                  color: "#4f46e5",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  textDecoration: "underline",
-                  marginBottom: "8px",
+                  marginTop: "20px",
+                  padding: "14px 16px",
+                  backgroundColor: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
                 }}
               >
-                Email me a secure login link
-              </button>
-              <br />
-              <button
-                type="button"
-                onClick={() => setShowResetModal(true)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: "#64748b",
-                  fontSize: "12px",
-                  cursor: "pointer",
-                }}
-              >
-                Forgot password?
-              </button>
-            </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#4f46e5"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ flexShrink: 0, marginTop: "2px" }}
+                  >
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                  </svg>
+                  <div>
+                    <strong
+                      style={{
+                        display: "block",
+                        fontSize: "13px",
+                        color: "#1e293b",
+                        fontWeight: 600,
+                        marginBottom: "3px",
+                      }}
+                    >
+                      Email me a secure login
+                    </strong>
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        color: "#64748b",
+                        lineHeight: 1.45,
+                        margin: 0,
+                      }}
+                    >
+                      Don't worry if you don't have a password or you can't remember it, we can email you a secure link.
+                    </p>
+                  </div>
+                </div>
 
-            <div style={{ marginTop: "20px", textAlign: "center", fontSize: "13px", color: "#64748b" }}>
-              {view === "login" ? (
-                <>
-                  Don't have an account?{" "}
+                <button
+                  type="button"
+                  onClick={handleMagicLinkSignIn}
+                  disabled={isLoading}
+                  style={{
+                    width: "100%",
+                    marginTop: "12px",
+                    padding: "9px 14px",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "7px",
+                    color: "#1f2937",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    transition: "background-color 0.15s",
+                    boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f9fafb")}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
+                >
+                  Email me a secure login
+                </button>
+              </div>
+            )}
+
+            {/* BOTTOM: Reset password link and View Switch */}
+            <div
+              style={{
+                marginTop: "20px",
+                textAlign: "center",
+                fontSize: "13px",
+                color: "#64748b",
+              }}
+            >
+              {view === "login" && (
+                <div style={{ marginBottom: "10px" }}>
                   <button
                     type="button"
-                    onClick={() => setView("signup")}
+                    onClick={() => {
+                      setResetEmail(email);
+                      setShowResetModal(true);
+                    }}
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#4f46e5",
-                      fontWeight: 600,
+                      color: "#64748b",
+                      fontSize: "12px",
                       cursor: "pointer",
+                      textDecoration: "underline",
+                      padding: 0,
                     }}
                   >
-                    Sign up
+                    Reset password
                   </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => setView("login")}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#4f46e5",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Sign in
-                  </button>
-                </>
+                </div>
               )}
+
+              <div>
+                {view === "login" ? (
+                  <span>
+                    Don't have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setView("signup")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#4f46e5",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      Sign up
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    Already have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => setView("login")}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#4f46e5",
+                        fontWeight: 600,
+                        fontSize: "13px",
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      Log in
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Reset Password Modal */}
+      {/* Password Reset Modal */}
       {showResetModal && (
         <div
           style={{
             position: "fixed",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
+            backgroundColor: "rgba(10, 25, 47, 0.8)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            zIndex: 100,
+            padding: "16px",
+            zIndex: 1000,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowResetModal(false);
           }}
         >
           <div
             style={{
-              backgroundColor: "#fff",
-              borderRadius: "12px",
-              padding: "24px",
-              maxWidth: "360px",
-              width: "90%",
+              backgroundColor: "#ffffff",
+              borderRadius: "14px",
+              padding: "28px 24px",
+              maxWidth: "400px",
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
+              color: "#1e293b",
             }}
           >
-            <h3 style={{ margin: "0 0 12px", color: "#0a192f" }}>Reset Password</h3>
+            <h3 style={{ fontSize: "17px", fontWeight: 700, margin: "0 0 6px 0", color: "#0a192f" }}>
+              Reset your password
+            </h3>
+            <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 16px 0", lineHeight: 1.4 }}>
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
             <form onSubmit={handlePasswordReset}>
               <input
                 type="email"
-                placeholder="Your email"
-                value={resetEmail || email}
-                onChange={(e) => setResetEmail(e.target.value)}
                 required
+                placeholder="investor@institution.com"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
                 style={{
                   width: "100%",
-                  padding: "10px",
-                  marginBottom: "12px",
+                  padding: "10px 12px",
+                  fontSize: "14px",
                   border: "1px solid #d1d5db",
-                  borderRadius: "8px",
+                  borderRadius: "7px",
+                  marginBottom: "14px",
                   boxSizing: "border-box",
                 }}
               />
-              <div style={{ display: "flex", gap: "8px" }}>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowResetModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: "9px",
+                    backgroundColor: "#f1f5f9",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "7px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    color: "#475569",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={isLoading}
                   style={{
                     flex: 1,
-                    padding: "10px",
-                    backgroundColor: "#0a192f",
-                    color: "#f5c518",
+                    padding: "9px",
+                    backgroundColor: "#4f46e5",
                     border: "none",
-                    borderRadius: "8px",
+                    borderRadius: "7px",
+                    fontSize: "13px",
                     fontWeight: 600,
+                    color: "#ffffff",
                     cursor: "pointer",
                   }}
                 >
-                  Send Reset Link
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowResetModal(false)}
-                  style={{
-                    padding: "10px 16px",
-                    backgroundColor: "#f1f5f9",
-                    border: "none",
-                    borderRadius: "8px",
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
+                  {isLoading ? "Sending..." : "Send link"}
                 </button>
               </div>
             </form>
@@ -806,3 +960,4 @@ export function AuthPage({
     </div>
   );
 }
+export default AuthPage;
