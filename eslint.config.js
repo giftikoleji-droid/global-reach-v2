@@ -39,7 +39,15 @@ export default tseslint.config(
         "warn",
         {
           allowConstantExport: true,
-          allowExportNames: ["Route", "loader", "action", "headers", "pendingComponent", "errorComponent", "notFoundComponent"],
+          allowExportNames: [
+            "Route",
+            "loader",
+            "action",
+            "headers",
+            "pendingComponent",
+            "errorComponent",
+            "notFoundComponent",
+          ],
         },
       ],
       "@typescript-eslint/no-unused-vars": "off",

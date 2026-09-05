@@ -101,10 +101,7 @@ describe("route tree", () => {
 
   for (const route of required) {
     it(`includes ${route}`, () => {
-      assert.ok(
-        routeTree.includes(`path: '${route}'`) ||
-          routeTree.includes(`path: "${route}"`),
-      );
+      assert.ok(routeTree.includes(`path: '${route}'`) || routeTree.includes(`path: "${route}"`));
     });
   }
 });

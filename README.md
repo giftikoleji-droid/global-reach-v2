@@ -16,22 +16,22 @@ npm run dev
 
 ## Environment variables
 
-| Variable | Where used | Description |
-|----------|------------|-------------|
-| `VITE_SUPABASE_URL` | Browser / Vite | Supabase project URL |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser / Vite | Supabase anon / publishable key |
-| `VITE_PUBLIC_APP_URL` | Browser | Public app origin for referral links (falls back to `window.location.origin`) |
-| `PUBLIC_APP_URL` | Edge Functions | Public app origin for support dashboard links |
-| `COMPANY_INBOX` | Edge Functions | Support ticket destination inbox |
-| `SUPPORT_FROM_EMAIL` | Edge Functions | Verified Resend sender address |
-| `RESEND_API_KEY` | Edge Functions | Resend API key for outbound mail |
-| `SUPABASE_URL` | Edge Functions | Supabase URL (server) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Edge Functions | Service role key (server only) |
-| `BTC_API_URL` | Edge Functions | Bitcoin verification API base |
-| `ETH_RPC_URL` | Edge Functions | Ethereum RPC endpoint |
-| `TRON_API_URL` | Edge Functions | Tron API base |
-| `TRONGRID_API_KEY` | Edge Functions | Trongrid API key |
-| `PRICE_API_URL` | Edge Functions | Price feed API base |
+| Variable                        | Where used     | Description                                                                   |
+| ------------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| `VITE_SUPABASE_URL`             | Browser / Vite | Supabase project URL                                                          |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Browser / Vite | Supabase anon / publishable key                                               |
+| `VITE_PUBLIC_APP_URL`           | Browser        | Public app origin for referral links (falls back to `window.location.origin`) |
+| `PUBLIC_APP_URL`                | Edge Functions | Public app origin for support dashboard links                                 |
+| `COMPANY_INBOX`                 | Edge Functions | Support ticket destination inbox                                              |
+| `SUPPORT_FROM_EMAIL`            | Edge Functions | Verified Resend sender address                                                |
+| `RESEND_API_KEY`                | Edge Functions | Resend API key for outbound mail                                              |
+| `SUPABASE_URL`                  | Edge Functions | Supabase URL (server)                                                         |
+| `SUPABASE_SERVICE_ROLE_KEY`     | Edge Functions | Service role key (server only)                                                |
+| `BTC_API_URL`                   | Edge Functions | Bitcoin verification API base                                                 |
+| `ETH_RPC_URL`                   | Edge Functions | Ethereum RPC endpoint                                                         |
+| `TRON_API_URL`                  | Edge Functions | Tron API base                                                                 |
+| `TRONGRID_API_KEY`              | Edge Functions | Trongrid API key                                                              |
+| `PRICE_API_URL`                 | Edge Functions | Price feed API base                                                           |
 
 Copy `.env.example` and set the values for local development. Production secrets belong in Vercel / Supabase project settings, not in git.
 
