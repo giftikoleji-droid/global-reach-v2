@@ -1,44 +1,47 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { Dashboard } from '../dashboard/Dashboard'
-import { useAuth } from '../lib/AuthContext'
+import { useState } from "react";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { Dashboard } from "../dashboard/Dashboard";
+import { PlanModal } from "../components/PlanModal";
+import { useAuth } from "../lib/AuthContext";
+import { supabase } from "../lib/supabase";
 
-export const Route = createFileRoute('/dashboard')({
+export const Route = createFileRoute("/dashboard")({
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw redirect({ to: "/login" });
+    }
+  },
   component: DashboardRoute,
-})
+});
 
 function DashboardRoute() {
-  const { session, profile, loading, logout } = useAuth()
+  const router = useRouter();
+  const { session, profile, loading, logout } = useAuth();
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">
-        Loading portfolio…
-      </div>
-    )
+    return <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white">Loading portfolio…</div>;
   }
-
-  if (!session) {
-    // Soft redirect – router will handle proper navigation once routeTree is regenerated
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
-    return null
-  }
+  if (!session) return null;
 
   return (
-    <Dashboard
-      profile={profile}
-      onLogout={() => void logout()}
-      onBrowsePlans={() => {
-        if (typeof window !== 'undefined') {
-          window.history.pushState({}, '', '/investments')
-          window.dispatchEvent(new PopStateEvent('popstate'))
-        }
-      }}
-      onChoosePlan={(planId) => {
-        // Placeholder – integrate PlanModal later
-        console.log('Choose plan', planId)
-      }}
-    />
-  )
+    <>
+      <Dashboard
+        profile={profile}
+        onLogout={() => void logout()}
+        onBrowsePlans={() => void router.navigate({ to: "/investments" })}
+        onChoosePlan={(planId) => setSelectedPlanId(planId)}
+      />
+      {selectedPlanId && (
+        <PlanModal
+          planId={selectedPlanId}
+          user={profile}
+          onClose={() => setSelectedPlanId(null)}
+          onCreated={() => { setSelectedPlanId(null); void router.invalidate(); }}
+          onRequireAuth={() => { setSelectedPlanId(null); void router.navigate({ to: "/login" }); }}
+        />
+      )}
+    </>
+  );
 }
